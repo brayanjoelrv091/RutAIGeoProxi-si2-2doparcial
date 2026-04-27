@@ -56,6 +56,41 @@
               <a routerLink="/workshops/register" class="admin-link">🏪 Registrar Taller</a>
             }
           </div>
+
+          <hr style="border: 1px solid rgba(0, 242, 255, 0.2); margin: 1.5rem 0;" />
+          <h3 class="tech-font" style="font-size: 1.2rem; color: #00F2FF;">Cambiar Contraseña</h3>
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="tech-form-vertical" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label>Contraseña Actual</label>
+              <div style="position: relative;">
+                <input [type]="showCurrentPass ? 'text' : 'password'" formControlName="currentPassword" placeholder="••••••••" style="width: 100%; padding-right: 40px;" />
+                <button type="button" (click)="showCurrentPass = !showCurrentPass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #00F2FF; cursor: pointer;">
+                  <i class="fas" [ngClass]="showCurrentPass ? 'fa-eye-slash' : 'fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Nueva Contraseña</label>
+              <div style="position: relative;">
+                <input [type]="showNewPass ? 'text' : 'password'" formControlName="newPassword" placeholder="••••••••" style="width: 100%; padding-right: 40px;" />
+                <button type="button" (click)="showNewPass = !showNewPass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #00F2FF; cursor: pointer;">
+                  <i class="fas" [ngClass]="showNewPass ? 'fa-eye-slash' : 'fa-eye'"></i>
+                </button>
+              </div>
+              @if (passwordForm.controls.newPassword.invalid && passwordForm.controls.newPassword.touched) {
+                <small class="error-text" style="color: #ff4d4d; margin-top: 5px; display: block;">
+                  @if (passwordForm.controls.newPassword.errors?.['required']) { Obligatorio. }
+                  @if (passwordForm.controls.newPassword.errors?.['minlength']) { Mínimo 8 caracteres. }
+                  @if (passwordForm.controls.newPassword.errors?.['pattern']) { Debe incluir al menos 1 mayúscula y 1 número. }
+                </small>
+              }
+            </div>
+            @if (passError) { <p class="error-msg-box" style="font-size: 0.9rem; padding: 5px;">{{ passError }}</p> }
+            @if (passSuccess) { <p class="success-msg-box" style="font-size: 0.9rem; padding: 5px; color: #0f0; border: 1px solid #0f0;">{{ passSuccess }}</p> }
+            <button type="submit" class="btn-premium small" [disabled]="passwordForm.invalid || passLoading">
+              {{ passLoading ? 'ACTUALIZANDO...' : 'ACTUALIZAR' }}
+            </button>
+          </form>
         </section>
 
         <!-- Gestión de Vehículos (CU-06) -->

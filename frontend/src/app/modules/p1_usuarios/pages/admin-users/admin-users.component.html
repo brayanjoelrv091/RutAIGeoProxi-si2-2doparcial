@@ -58,6 +58,35 @@
           </tbody>
         </table>
       </div>
+
+      <h2 class="tech-font cyan-text" style="margin-top: 3rem;">BITÁCORA DE AUDITORÍA</h2>
+      <div class="table-container">
+        <table class="tech-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Fecha/Hora</th>
+              <th>Rol</th>
+              <th>Acción Realizada</th>
+              <th>IP Origen</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of bitacora; track log.id) {
+              <tr class="table-row">
+                <td class="id-col">#{{ log.id }}</td>
+                <td>{{ log.creado_en | date:'short' }}</td>
+                <td><span class="badge" [ngClass]="log.rol || 'admin'">{{ log.rol || 'Sistema' }}</span></td>
+                <td>{{ log.accion }}</td>
+                <td style="font-family: monospace;">{{ log.ip }}</td>
+              </tr>
+            }
+            @if (bitacora.length === 0) {
+              <tr><td colspan="5" style="text-align: center;">No hay registros.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     }
   </main>
 

@@ -179,3 +179,7 @@ class RoleUpdate(BaseModel):
 
 class PermissionsUpdate(BaseModel):
     permisos: dict[str, Any]
+
+
+class FCMTokenUpdate(BaseModel):
+    fcm_token: str = Field(min_length=1)

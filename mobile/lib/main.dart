@@ -19,7 +19,10 @@ library;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'backend.dart';
 import 'core/api_client.dart';
 import 'modules/auth/services/auth_service.dart';
 import 'modules/auth/screens/login_screen.dart';
@@ -35,7 +38,17 @@ import 'modules/vehicles/screens/my_vehicles_screen.dart';
 import 'modules/workshops/screens/workshop_list_screen.dart';
 import 'screens/report_incident_screen.dart';
 
-void main() {
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  
   runApp(const RutAIGeoProxiApp());
 }
 
@@ -219,6 +232,29 @@ class _HomeWrapperState extends State<_HomeWrapper> {
       final token = await ApiClient.getToken();
       if (token == null) return;
 
+      // ── Configuración FCM (Push Real) ──
+      final messaging = FirebaseMessaging.instance;
+      
+      // Solicitar permiso (iOS y Android 13+)
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true, badge: true, sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        final fcmToken = await messaging.getToken();
+        if (fcmToken != null) {
+          // Guardar token en el backend
+          await Backend.updateFcmToken(fcmToken);
+        }
+      }
+
+      // Escuchar mensajes en primer plano (Foreground)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        if (message.notification != null && mounted) {
+          _showBanner(message.notification!.title ?? 'Notificación', message.notification!.body ?? '');
+        }
+      });
+
       // Decodificar user_id del JWT payload (base64url → JSON)
       final parts = token.split('.');
       if (parts.length != 3) return;
@@ -236,33 +272,33 @@ class _HomeWrapperState extends State<_HomeWrapper> {
       NotificationService.instance.notifications.listen((notif) {
         if (mounted) {
           setState(() => _notifCount++);
-          // 🚨 EXPERIENCIA YANGO: Alerta visual instantánea en Mobile
-          final title = notif.titulo;
-          final msg = notif.mensaje;
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  if (msg.isNotEmpty) Text(msg, style: const TextStyle(fontSize: 14)),
-                ],
-              ),
-              backgroundColor: const Color(0xFF00F2FF), // Cyan
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              duration: const Duration(seconds: 5),
-              dismissDirection: DismissDirection.up,
-            ),
-          );
+          _showBanner(notif.titulo, notif.mensaje);
         }
       });
     } catch (_) {
       // Silenciar errores — las notificaciones son opcionales en home
     }
+  }
+
+  void _showBanner(String title, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            if (msg.isNotEmpty) Text(msg, style: const TextStyle(fontSize: 14)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF00F2FF), // Cyan
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 5),
+        dismissDirection: DismissDirection.up,
+      ),
+    );
   }
 
   Future<void> _logout() async {

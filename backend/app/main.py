@@ -65,8 +65,10 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Crea tablas y seed del admin al iniciar."""
+    from app.shared.firebase_config import init_firebase
     logger.info("🚀 Creando tablas en la base de datos...")
     Base.metadata.create_all(bind=engine)
+    init_firebase()
     logger.info("✅ Tablas creadas/verificadas")
 
     # Seed del administrador

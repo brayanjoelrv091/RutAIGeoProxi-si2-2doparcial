@@ -25,6 +25,21 @@ export class HomeComponent implements OnInit {
     anio: [null as number | null],
   });
 
+  passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/)
+    ]],
+  });
+
+  passError = '';
+  passSuccess = '';
+  passLoading = false;
+  showCurrentPass = false;
+  showNewPass = false;
+
   ngOnInit(): void {
     this.refresh();
   }
@@ -72,6 +87,27 @@ export class HomeComponent implements OnInit {
   removeVehicle(v: Vehicle): void {
     if (!confirm(`Eliminar ${v.placa}?`)) return;
     this.auth.deleteVehicle(v.id).subscribe({ next: () => this.refresh() });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid) return;
+    const vals = this.passwordForm.getRawValue();
+    this.passLoading = true;
+    this.passError = '';
+    this.passSuccess = '';
+    
+    this.auth.changePassword(vals.currentPassword, vals.newPassword).subscribe({
+      next: (res) => {
+        this.passLoading = false;
+        this.passSuccess = res.message || 'Contraseña actualizada exitosamente.';
+        this.passwordForm.reset();
+        setTimeout(() => this.passSuccess = '', 5000);
+      },
+      error: (e) => {
+        this.passLoading = false;
+        this.passError = e.error?.detail || 'Error al actualizar contraseña.';
+      }
+    });
   }
 
   logout(): void {

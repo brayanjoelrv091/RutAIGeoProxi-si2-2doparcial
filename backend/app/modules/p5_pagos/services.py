@@ -130,6 +130,17 @@ class PaymentService:
         }
         for user_id in sorted(recipient_ids):
             await manager.send_personal_message(payload, str(user_id))
+            
+            # Notificación Push Real
+            u = db.query(Usuario).filter(Usuario.id == user_id).first()
+            if u and u.fcm_token:
+                from app.shared.firebase_config import send_push_notification
+                send_push_notification(
+                    fcm_token=u.fcm_token,
+                    title="Pago aprobado",
+                    body=message,
+                    data={"type": "payment_approved", "incidente_id": str(nuevo_pago.incidente_id)}
+                )
 
         return nuevo_pago
 
@@ -143,7 +154,7 @@ class NotificationService:
         mensaje: str,
     ):
         """
-        CU16 · Envia una notificacion push simulada via WebSocket.
+        CU16 · Envia una notificacion push real (FCM) y via WebSocket.
         """
         nueva_notif = Notificacion(
             usuario_id=user_id,
@@ -154,6 +165,7 @@ class NotificationService:
         db.add(nueva_notif)
         db.commit()
 
+        # ── 1. Enviar vía WebSocket (Tiempo real app abierta) ──
         await manager.send_personal_message(
             {
                 "type": "notification",
@@ -163,5 +175,16 @@ class NotificationService:
             },
             str(user_id),
         )
+
+        # ── 2. Enviar vía FCM (Push real segundo plano) ──
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if user and user.fcm_token:
+            from app.shared.firebase_config import send_push_notification
+            send_push_notification(
+                fcm_token=user.fcm_token,
+                title=titulo,
+                body=mensaje,
+                data={"type": "notification", "id": str(nueva_notif.id)}
+            )
 
         return nueva_notif

@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
+  bool _obscurePass = true;
   String _error = '';
 
   Future<void> _submit() async {
@@ -76,7 +77,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passCtrl,
                     label: 'Contraseña',
                     icon: Icons.lock_outline,
-                    obscure: true,
+                    obscure: _obscurePass,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePass ? Icons.visibility_off : Icons.visibility,
+                        color: const Color(0xFF00F2FF),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePass = !_obscurePass;
+                        });
+                      },
+                    ),
                     validator: (v) =>
                         v == null || v.isEmpty ? 'Ingresa tu contraseña' : null,
                   ),
@@ -154,6 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     bool obscure = false,
     TextInputType? keyboardType,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -166,6 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white54),
         prefixIcon: Icon(icon, color: const Color(0xFF00F2FF)),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFF1A1F35),
         border: OutlineInputBorder(

@@ -16,7 +16,12 @@
 
       <div class="form-group">
         <label>Contraseña</label>
-        <input type="password" formControlName="password" autocomplete="current-password" placeholder="••••••••" [class.input-error]="form.controls.password.invalid && form.controls.password.touched" />
+        <div class="password-wrapper" style="position: relative;">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="current-password" placeholder="••••••••" [class.input-error]="form.controls.password.invalid && form.controls.password.touched" style="width: 100%; padding-right: 40px;" />
+          <button type="button" (click)="showPassword = !showPassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #00F2FF; cursor: pointer; font-size: 1.2rem;">
+            <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
         @if (form.controls.password.invalid && form.controls.password.touched) {
           <small class="error-text">La contraseña es obligatoria</small>
         }

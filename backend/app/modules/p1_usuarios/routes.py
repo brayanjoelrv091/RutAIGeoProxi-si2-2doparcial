@@ -38,6 +38,7 @@ from app.modules.p1_usuarios.schemas import (
     VehicleCreate,
     VehicleOut,
     VehicleUpdate,
+    FCMTokenUpdate,
 )
 from app.modules.p1_usuarios.services import AuthService, UserService, VehicleService
 from app.modules.p6_auditoria.services import AuditService
@@ -148,29 +149,47 @@ def admin_list_users(
 @admin_router.patch(
     "/users/{user_id}/role",
     response_model=UserOut,
-    summary="CU5 · Cambiar rol (admin)",
+    summary="CU5 · Cambiar rol de usuario",
 )
 def admin_update_role(
     user_id: int,
     payload: RoleUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current: Usuario = Depends(admin_dep),
 ):
-    return UserService.update_role(db, user_id, payload, current.id)
+    user = UserService.update_role(db, user_id, payload, current.id)
+    AuditService.log(
+        db,
+        accion=f"Cambió rol de usuario {user_id} a {payload.rol}",
+        request=request,
+        usuario_id=current.id,
+        rol=current.rol,
+    )
+    return user
 
 
 @admin_router.patch(
     "/users/{user_id}/permissions",
     response_model=UserOut,
-    summary="CU5 · Cambiar permisos (admin)",
+    summary="CU5 · Actualizar permisos",
 )
 def admin_update_permissions(
     user_id: int,
     payload: PermissionsUpdate,
+    request: Request,
     db: Session = Depends(get_db),
-    _current: Usuario = Depends(admin_dep),
+    current: Usuario = Depends(admin_dep),
 ):
-    return UserService.update_permissions(db, user_id, payload)
+    user = UserService.update_permissions(db, user_id, payload)
+    AuditService.log(
+        db,
+        accion=f"Actualizó permisos del usuario {user_id}",
+        request=request,
+        usuario_id=current.id,
+        rol=current.rol,
+    )
+    return user
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -200,6 +219,22 @@ def update_me(
     current: Usuario = Depends(get_current_user),
 ):
     return UserService.update_profile(db, current.id, payload)
+
+
+@profile_router.patch(
+    "/fcm-token",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Actualizar token de notificaciones FCM",
+)
+def update_fcm_token(
+    payload: FCMTokenUpdate,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    """Guarda el token del dispositivo para enviar notificaciones Push."""
+    current.fcm_token = payload.fcm_token
+    db.commit()
+    return None
 
 @profile_router.put(
     "/password",

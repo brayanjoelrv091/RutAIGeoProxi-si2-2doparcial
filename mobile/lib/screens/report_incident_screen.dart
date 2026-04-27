@@ -152,13 +152,13 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
 
   Future<void> _pickAudioFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
       );
       if (result != null && result.files.single.path != null) {
         setState(() {
           _audioFile = File(result.files.single.path!);
-          _isRecording = false; // Por si estaba grabando
+          _isRecording = false; 
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('🎵 Archivo de audio cargado')),

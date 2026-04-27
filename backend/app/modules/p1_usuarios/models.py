@@ -27,6 +27,7 @@ class Usuario(Base):
     esta_activo = Column(Boolean, default=True, nullable=False)
     rol = Column(String(20), nullable=False, default="cliente")
     permisos = Column(JSON, nullable=True)
+    fcm_token = Column(String(255), nullable=True)
 
     # ── Lockout & Security ──
     intentos_fallidos = Column(Integer, default=0, nullable=False)

@@ -21,8 +21,21 @@
 
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" formControlName="password" autocomplete="new-password" placeholder="••••••••" />
-          <small class="hint-text">Mínimo 8 caracteres, 1 mayúscula, 1 número</small>
+          <div class="password-wrapper" style="position: relative;">
+            <input [type]="showPassword ? 'text' : 'password'" formControlName="password" autocomplete="new-password" placeholder="••••••••" [class.input-error]="form.controls.password.invalid && form.controls.password.touched" style="width: 100%; padding-right: 40px;" />
+            <button type="button" (click)="showPassword = !showPassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #00F2FF; cursor: pointer; font-size: 1.2rem;">
+              <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <small class="error-text" style="color: #ff4d4d; margin-top: 5px; display: block;">
+              @if (form.controls.password.errors?.['required']) { Obligatorio. }
+              @if (form.controls.password.errors?.['minlength']) { Mínimo 8 caracteres. }
+              @if (form.controls.password.errors?.['pattern']) { Debe incluir al menos 1 mayúscula y 1 número. }
+            </small>
+          } @else {
+            <small class="hint-text">Mínimo 8 caracteres, 1 mayúscula, 1 número</small>
+          }
         </div>
 
         <div class="form-group role-selector">

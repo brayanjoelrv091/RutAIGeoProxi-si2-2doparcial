@@ -1,7 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService, Me } from '../../auth.service';
+import { environment } from '../../../../../environments/environment';
+import { AuthService } from '../../auth.service';
+
+interface User {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: string;
+  permisos: any;
+}
+
+interface Bitacora {
+  id: number;
+  usuario_id: number;
+  rol: string;
+  accion: string;
+  ip: string;
+  creado_en: string;
+}
 
 @Component({
   selector: 'app-admin-users',
@@ -13,33 +31,56 @@ import { AuthService, Me } from '../../auth.service';
 export class AdminUsersComponent implements OnInit {
   private readonly auth = inject(AuthService);
 
-  users: Me[] = [];
+  users: User[] = [];
+  bitacora: Bitacora[] = [];
   loading = true;
   error = '';
-  editingUser: Me | null = null;
+  editingUser: User | null = null;
   newPermissionsStr = '';
 
   roles = ['admin', 'taller', 'cliente'];
 
   ngOnInit(): void {
-    this.loadUsers();
+    this.loadData();
+  }
+
+  async loadData() {
+    this.loading = true;
+    this.error = '';
+    try {
+      await Promise.all([this.fetchUsers(), this.fetchAudit()]);
+    } catch (e: any) {
+      this.error = 'Error de conexión con la red principal.';
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async fetchUsers() {
+    const token = this.auth.getToken();
+    const res = await fetch(`${environment.apiUrl}/admin/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      this.users = await res.json();
+    }
+  }
+
+  async fetchAudit() {
+    const token = this.auth.getToken();
+    const res = await fetch(`${environment.apiUrl}/admin/audit`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      this.bitacora = await res.json();
+    }
   }
 
   loadUsers(): void {
-    this.loading = true;
-    this.auth.listUsers().subscribe({
-      next: (data) => {
-        this.users = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Error al cargar usuarios';
-        this.loading = false;
-      },
-    });
+    this.loadData();
   }
 
-  changeRole(user: Me, newRole: string): void {
+  changeRole(user: User, newRole: string): void {
     if (user.rol === newRole) return;
     
     this.auth.updateUserRole(user.id, newRole).subscribe({
@@ -53,7 +94,7 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
-  openPermissions(user: Me): void {
+  openPermissions(user: User): void {
     this.editingUser = user;
     this.newPermissionsStr = JSON.stringify(user.permisos || {}, null, 2);
   }

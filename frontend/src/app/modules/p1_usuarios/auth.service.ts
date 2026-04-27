@@ -98,6 +98,10 @@ export class AuthService {
     return this.http.post<void>(`${this.base}/auth/reset-password`, { token, new_password });
   }
 
+  changePassword(current_password: string, new_password: string): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/me/password`, { current_password, new_password }, { headers: { Authorization: `Bearer ${this.token}` } });
+  }
+
   // CU-05: Administración de usuarios y roles
   listUsers(): Observable<Me[]> {
     return this.http.get<Me[]>(`${this.base}/admin/users`);

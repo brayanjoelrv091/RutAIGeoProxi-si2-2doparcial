@@ -106,6 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('${_me!['name']}', style: Theme.of(context).textTheme.titleLarge),
                   Text('${_me!['email']}'),
                   Text('Rol: ${_me!['role']}'),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: _showPasswordChangeModal,
+                    icon: const Icon(Icons.lock_outline, color: Colors.black),
+                    label: const Text('Cambiar Contraseña', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00F2FF)),
+                  ),
                   const SizedBox(height: 16),
                   if (_me!['role'] == 'cliente') ...[
                     const Text('Vehículos', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -140,5 +147,117 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _delete(id)),
       );
     }).toList();
+  }
+
+  void _showPasswordChangeModal() {
+    final curCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    bool obscureCur = true;
+    bool obscureNew = true;
+    bool loading = false;
+    String? errorMsg;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1A1F35),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Cambiar Contraseña', style: TextStyle(color: Color(0xFF00F2FF), fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: curCtrl,
+                    obscureText: obscureCur,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña Actual',
+                      labelStyle: const TextStyle(color: Colors.white54),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscureCur ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF00F2FF)),
+                        onPressed: () => setModalState(() => obscureCur = !obscureCur),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFF0A0E1A),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: newCtrl,
+                    obscureText: obscureNew,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Nueva Contraseña',
+                      labelStyle: const TextStyle(color: Colors.white54),
+                      helperText: 'Mínimo 8 caracteres, 1 mayúscula, 1 número',
+                      helperStyle: const TextStyle(color: Colors.white38),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF00F2FF)),
+                        onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFF0A0E1A),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  if (errorMsg != null) ...[
+                    const SizedBox(height: 10),
+                    Text(errorMsg!, style: const TextStyle(color: Colors.redAccent)),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : () async {
+                        final cur = curCtrl.text;
+                        final neo = newCtrl.text;
+                        if (cur.isEmpty || neo.isEmpty) {
+                          setModalState(() => errorMsg = 'Completa todos los campos');
+                          return;
+                        }
+                        if (neo.length < 8 || !RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$').hasMatch(neo)) {
+                          setModalState(() => errorMsg = 'Contraseña débil. Sigue las reglas.');
+                          return;
+                        }
+
+                        setModalState(() { loading = true; errorMsg = null; });
+                        final err = await Backend.changePassword(currentPassword: cur, newPassword: neo);
+                        
+                        if (!ctx.mounted) return;
+                        if (err != null) {
+                          setModalState(() { loading = false; errorMsg = err; });
+                        } else {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contraseña actualizada', style: TextStyle(color: Colors.black)), backgroundColor: Color(0xFF00F2FF)));
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00F2FF)),
+                      child: loading 
+                        ? const CircularProgressIndicator(color: Colors.black) 
+                        : const Text('ACTUALIZAR CONTRASEÑA', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
   }
 }

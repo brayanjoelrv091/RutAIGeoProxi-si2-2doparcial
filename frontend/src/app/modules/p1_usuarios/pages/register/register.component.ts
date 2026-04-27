@@ -20,6 +20,7 @@ export class RegisterComponent {
   loading = false;
   registeredRole = '';
   registeredEmail = '';
+  showPassword = false;
 
   form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],

@@ -207,4 +207,36 @@ class Backend {
     } catch (_) {}
     return 'Error ${response.statusCode}';
   }
+
+  static Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      await http.patch(
+        _uri('/me/fcm-token'),
+        headers: await _headers(jsonBody: true),
+        body: jsonEncode({'fcm_token': fcmToken}),
+      );
+    } catch (_) {
+      // Silenciar errores de token
+    }
+  }
+
+  static Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await http.patch(
+      _uri('/me/password'),
+      headers: await _headers(jsonBody: true),
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      }),
+    );
+    if (response.statusCode == 200) return null;
+    try {
+      final data = jsonDecode(response.body);
+      return data['detail']?.toString() ?? 'Error al cambiar contraseña';
+    } catch (_) {}
+    return 'Error ${response.statusCode}';
+  }
 }

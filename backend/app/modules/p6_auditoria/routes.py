@@ -16,8 +16,8 @@ class BitacoraOut(BaseModel):
     usuario_id: int | None
     rol: str | None
     accion: str
-    ip: str
-    fecha: datetime
+    ip: str | None = None
+    creado_en: datetime
 
     class Config:
         from_attributes = True
@@ -32,4 +32,4 @@ def list_audit_logs(
     Solo accesible por usuarios con rol 'admin'.
     """
     from app.modules.p6_auditoria.models import Bitacora
-    return db.query(Bitacora).order_by(Bitacora.fecha.desc()).all()
+    return db.query(Bitacora).order_by(Bitacora.creado_en.desc()).all()

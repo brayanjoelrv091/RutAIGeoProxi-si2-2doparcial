@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _loading = false;
+  bool _obscurePass = true;
   String _error = '';
 
   Future<void> _submit() async {
@@ -111,12 +112,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _passCtrl,
                     label: 'Contrasena (min 8 caract.)',
                     icon: Icons.lock_outline,
-                    obscure: true,
+                    obscure: _obscurePass,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePass ? Icons.visibility_off : Icons.visibility,
+                        color: const Color(0xFF00F2FF),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePass = !_obscurePass;
+                        });
+                      },
+                    ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
                         return 'Ingresa una contrasena';
                       }
                       if (v.length < 8) return 'Minimo 8 caracteres';
+                      if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$').hasMatch(v)) {
+                        return 'Debe incluir al menos 1 mayuscula y 1 numero';
+                      }
                       return null;
                     },
                   ),
@@ -177,6 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required IconData icon,
     bool obscure = false,
     TextInputType? keyboardType,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -189,6 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white54),
         prefixIcon: Icon(icon, color: const Color(0xFF00F2FF)),
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFF1A1F35),
         border: OutlineInputBorder(

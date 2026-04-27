@@ -73,7 +73,7 @@ class AuthService:
     def login(db: Session, payload: LoginRequest) -> TokenResponse:
         """CU1 — Inicio de sesión con JWT y Rate Limiting."""
         user = db.query(Usuario).filter(Usuario.email == payload.email).first()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if not user:
             raise HTTPException(
@@ -101,27 +101,27 @@ class AuthService:
                 db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Demasiados intentos. Tu cuenta ha sido bloqueada por 5 minutos por seguridad.",
+                    detail="Demasiados intentos fallidos (3). Tu cuenta ha sido bloqueada temporalmente por 5 minutos por seguridad.",
                 )
             elif user.intentos_fallidos == 4:
-                user.bloqueado_hasta = now + timedelta(minutes=15)
+                user.bloqueado_hasta = now + timedelta(minutes=7)
                 db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cuenta bloqueada temporalmente por 15 minutos.",
+                    detail="Demasiados intentos fallidos (4). Cuenta bloqueada temporalmente por 7 minutos.",
                 )
             elif user.intentos_fallidos >= 5:
                 user.esta_activo = False
                 db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Límite de intentos excedido. Tu cuenta ha sido bloqueada permanentemente. Por favor, contacta a soporte@rutaigeoproxi.com o a tu administrador para desbloquearla.",
+                    detail="Límite máximo de intentos excedido (5). Tu cuenta ha sido bloqueada permanentemente. Por favor, contacta al administrador para desbloquearla.",
                 )
             else:
                 db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Credenciales incorrectas",
+                    detail="Contraseña incorrecta. Recuerda respetar las mayúsculas y minúsculas.",
                 )
 
         # Exito: reset intentos

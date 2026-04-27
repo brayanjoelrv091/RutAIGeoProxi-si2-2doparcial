@@ -225,7 +225,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               // Línea conectando ambos puntos
               if (_myPosition != null && _remotePosition != null)
                 PolylineLayer(
-                  polylines: [
+                  polylines: <Polyline>[
                     Polyline(
                       points: [_myPosition!, _remotePosition!],
                       strokeWidth: 4.0,
