@@ -19,21 +19,68 @@ def send_reset_email(to_email: str, token: str):
     msg['To'] = to_email
 
     html_content = f"""
+    <!DOCTYPE html>
     <html>
-      <body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #0096FF;">Recupera tu acceso a RutAIGeoProxi</h2>
-        <p>Hola,</p>
-        <p>Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el botón de abajo para crear una nueva contraseña:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="{reset_url}" style="background-color: #00F2FF; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-            Restablecer Contraseña
-          </a>
-        </div>
-        <p>O copia y pega el siguiente enlace en tu navegador:</p>
-        <p style="word-break: break-all; font-size: 14px; color: #555;">{reset_url}</p>
-        <p>Si no fuiste tú quien solicitó el cambio, ignora este correo. El enlace expira en 1 hora.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-        <p style="font-size: 12px; color: #999; text-align: center;">El equipo de RutAIGeoProxi</p>
+      <body style="margin: 0; padding: 0; background-color: #121212; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #E0E0E0;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #121212; padding: 40px 0;">
+          <tr>
+            <td align="center">
+              <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #1E1E1E; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <!-- Header -->
+                <tr>
+                  <td style="background-color: #2A2A2A; padding: 20px; text-align: center; border-bottom: 2px solid #00F2FF;">
+                    <h1 style="color: #00F2FF; margin: 0; font-size: 24px; letter-spacing: 2px;">RUT<span style="color: #FFF;">AI</span>GEOPROXI</h1>
+                  </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <h2 style="color: #FFFFFF; font-size: 20px; margin-top: 0;">¡Hola!</h2>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-bottom: 30px;">
+                      Estás recibiendo este correo porque recibimos una solicitud de recuperación de contraseña para tu cuenta.
+                    </p>
+                    
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center">
+                          <a href="{reset_url}" style="display: inline-block; background-color: #00F2FF; color: #000000; font-weight: bold; font-size: 16px; text-decoration: none; padding: 14px 30px; border-radius: 4px;">
+                            Restablecer Contraseña
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-top: 30px;">
+                      Este enlace de recuperación expirará en 60 minutos.
+                    </p>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5;">
+                      Si no solicitaste un cambio de contraseña, no es necesario realizar ninguna acción.
+                    </p>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-top: 30px;">
+                      Saludos,<br>
+                      <strong style="color: #FFFFFF;">El equipo de RutAIGeoProxi</strong>
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #333333; margin: 30px 0;">
+                    
+                    <p style="color: #777777; font-size: 13px; line-height: 1.5; word-break: break-all;">
+                      Si tienes problemas para hacer clic en el botón "Restablecer Contraseña", copia y pega la siguiente URL en tu navegador web:<br>
+                      <a href="{reset_url}" style="color: #0096FF; text-decoration: none;">{reset_url}</a>
+                    </p>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #1A1A1A; padding: 20px; text-align: center;">
+                    <p style="color: #777777; font-size: 12px; margin: 0;">
+                      © 2026 RutAIGeoProxi. Todos los derechos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     </html>
     """
