@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -167,6 +168,8 @@ class Backend {
     required double lat,
     required double lng,
     String? address,
+    File? image,
+    File? audio,
   }) async {
     final request = http.MultipartRequest('POST', _uri('/incidents'));
     request.headers.addAll(await _headers(withAuth: true));
@@ -174,8 +177,23 @@ class Backend {
     request.fields['titulo'] = title;
     request.fields['latitud'] = lat.toString();
     request.fields['longitud'] = lng.toString();
-    if (description != null) request.fields['descripcion'] = description;
-    if (address != null) request.fields['direccion'] = address;
+    if (description != null && description.isNotEmpty) {
+      request.fields['descripcion'] = description;
+    }
+    if (address != null && address.isNotEmpty) {
+      request.fields['direccion'] = address;
+    }
+
+    if (image != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('fotos', image.path),
+      );
+    }
+    if (audio != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('audio', audio.path),
+      );
+    }
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);

@@ -63,3 +63,23 @@
 </nav>
 
 <router-outlet />
+
+<!-- EXPERIENCIA YANGO: Modal Invasivo para Talleres -->
+@if (yangoModalActive) {
+  <div class="yango-modal-overlay">
+    <div class="yango-modal-content glass-card">
+      <div class="yango-pulse"></div>
+      <h2>🚨 ¡NUEVA EMERGENCIA!</h2>
+      <p>Se te ha asignado un nuevo servicio de emergencia.</p>
+      
+      <div class="yango-actions">
+        <button class="btn-yango-accept" routerLink="/workshops/requests" (click)="closeYangoModal()">
+          VER SOLICITUD AHORA
+        </button>
+        <button class="btn-yango-reject" (click)="closeYangoModal()">
+          Descartar Aviso
+        </button>
+      </div>
+    </div>
+  </div>
+}

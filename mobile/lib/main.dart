@@ -233,8 +233,32 @@ class _HomeWrapperState extends State<_HomeWrapper> {
       if (userId == null) return;
 
       NotificationService.instance.connect(userId, token);
-      NotificationService.instance.notifications.listen((_) {
-        if (mounted) setState(() => _notifCount++);
+      NotificationService.instance.notifications.listen((notif) {
+        if (mounted) {
+          setState(() => _notifCount++);
+          // 🚨 EXPERIENCIA YANGO: Alerta visual instantánea en Mobile
+          final title = notif.titulo;
+          final msg = notif.mensaje;
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  if (msg.isNotEmpty) Text(msg, style: const TextStyle(fontSize: 14)),
+                ],
+              ),
+              backgroundColor: const Color(0xFF00F2FF), // Cyan
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 5),
+              dismissDirection: DismissDirection.up,
+            ),
+          );
+        }
       });
     } catch (_) {
       // Silenciar errores — las notificaciones son opcionales en home
@@ -302,7 +326,7 @@ class _HomeWrapperState extends State<_HomeWrapper> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -343,6 +367,30 @@ class _HomeWrapperState extends State<_HomeWrapper> {
               sub: 'CU7 · GPS + Descripción',
               color: const Color(0xFFFF6B6B),
               onTap: () => Navigator.pushNamed(context, '/report'),
+            ),
+            const SizedBox(height: 10),
+            _HomeButton(
+              icon: Icons.gps_fixed,
+              label: 'Tracking GPS',
+              sub: 'CU15 · Seguimiento en tiempo real',
+              color: const Color(0xFF00E676),
+              onTap: () => Navigator.pushNamed(
+                context,
+                '/tracking',
+                arguments: {'incidentId': 3, 'role': 'cliente'},
+              ),
+            ),
+            const SizedBox(height: 10),
+            _HomeButton(
+              icon: Icons.payment,
+              label: 'Pagar Servicio',
+              sub: 'CU18 · Pasarela de pago simulada',
+              color: const Color(0xFFAB47BC),
+              onTap: () => Navigator.pushNamed(
+                context,
+                '/payment',
+                arguments: {'incidentId': 4, 'amount': 45000.0},
+              ),
             ),
             const SizedBox(height: 10),
             _HomeButton(

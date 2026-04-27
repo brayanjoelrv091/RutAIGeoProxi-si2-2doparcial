@@ -102,8 +102,9 @@ class PaymentService:
         recipient_ids.update(owner_id for (owner_id,) in workshop_owner_ids)
 
         message = (
-            f"Se proceso el pago del incidente #{pago_in.incidente_id} "
-            f"por {monto_total:.2f} {pago_in.moneda}."
+            f"💰 Pago exitoso: {monto_total:.2f} {pago_in.moneda}. "
+            f"Comisión App (10%): -{comision:.2f} {pago_in.moneda}. "
+            f"Ganancia Taller: {monto_total - comision:.2f} {pago_in.moneda}."
         )
         for user_id in sorted(recipient_ids):
             db.add(

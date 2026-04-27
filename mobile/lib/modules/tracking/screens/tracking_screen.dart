@@ -12,6 +12,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/location_service.dart';
@@ -39,6 +40,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   String? _remoteTimestamp;
 
   bool _sendingLocation = false;
+  bool _proximityAlertShown = false;
   StreamSubscription<dynamic>? _sub;
   String _status = 'Conectando...';
 
@@ -46,6 +48,33 @@ class _TrackingScreenState extends State<TrackingScreen> {
   void initState() {
     super.initState();
     _connect();
+  }
+
+  Future<void> _checkProximity(double tLat, double tLng) async {
+    if (_proximityAlertShown || widget.role != 'cliente') return;
+    try {
+      final pos = await Geolocator.getLastKnownPosition();
+      if (pos == null) return;
+      final distanceMeters = Geolocator.distanceBetween(pos.latitude, pos.longitude, tLat, tLng);
+      if (distanceMeters < 500) {
+        _proximityAlertShown = true;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                '🚨 ¡PREPÁRATE! El técnico está a menos de 500 metros.',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              backgroundColor: const Color(0xFFFF6B6B),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+              dismissDirection: DismissDirection.up,
+              duration: const Duration(seconds: 10),
+            ),
+          );
+        }
+      }
+    } catch (_) {}
   }
 
   void _connect() {
@@ -63,6 +92,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
               _remoteRole = data['role'] as String?;
               _remoteTimestamp = data['timestamp'] as String?;
             });
+            if (_remoteLat != null && _remoteLng != null) {
+              _checkProximity(_remoteLat!, _remoteLng!);
+            }
           }
         }
       },
