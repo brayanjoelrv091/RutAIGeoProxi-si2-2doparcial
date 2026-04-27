@@ -2,11 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
+import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, NgClass],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
