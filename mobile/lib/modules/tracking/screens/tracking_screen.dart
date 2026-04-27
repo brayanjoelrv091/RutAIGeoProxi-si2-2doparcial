@@ -10,12 +10,15 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../core/api_client.dart';
 import '../../../core/location_service.dart';
+import '../../../config.dart';
 
 class TrackingScreen extends StatefulWidget {
   final int incidentId;
@@ -259,6 +262,27 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
             const Spacer(),
 
+            // Botón Diagnóstico IA
+            SizedBox(
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _isLoadingAI ? null : _showAIDiagnosis,
+                icon: _isLoadingAI 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                  : const Icon(Icons.psychology),
+                label: const Text(
+                  'VER DIAGNÓSTICO IA',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // Botón toggle GPS
             SizedBox(
               height: 52,
@@ -282,6 +306,88 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  bool _isLoadingAI = false;
+
+  Future<void> _showAIDiagnosis() async {
+    setState(() => _isLoadingAI = true);
+    try {
+      final response = await http.get(
+        Uri.parse('${AppConfig.baseUrl}/incidents/${widget.incidentId}'),
+        headers: {'Authorization': 'Bearer ${await ApiClient.getToken()}'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (!mounted) return;
+        _showAIBottomSheet(data);
+      } else {
+        throw Exception('Error al cargar datos IA');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingAI = false);
+    }
+  }
+
+  void _showAIBottomSheet(Map<String, dynamic> data) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111629),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Color(0xFF00F2FF), size: 28),
+                  SizedBox(width: 10),
+                  Text('Diagnóstico de Inteligencia Artificial', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildIARow('📝 Transcripción Audio (Whisper):', data['transcripcion_audio'] ?? 'No disponible'),
+              const SizedBox(height: 12),
+              _buildIARow('🏷️ Categoría Visual (Roboflow):', data['categoria'] ?? 'Desconocida'),
+              const SizedBox(height: 12),
+              _buildIARow('⚠️ Nivel de Prioridad:', data['severidad'] ?? 'Normal'),
+              const SizedBox(height: 12),
+              _buildIARow('🧠 Resumen Analítico (Groq):', data['resumen_ia'] ?? 'Procesando...'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00F2FF), foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  child: const Text('CERRAR PANEL', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildIARow(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(color: Color(0xFF00F2FF), fontSize: 13, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(content, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      ],
     );
   }
 }
