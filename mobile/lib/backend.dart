@@ -168,7 +168,7 @@ class Backend {
     required double lat,
     required double lng,
     String? address,
-    File? image,
+    List<File>? images,
     File? audio,
   }) async {
     final request = http.MultipartRequest('POST', _uri('/incidents'));
@@ -184,10 +184,12 @@ class Backend {
       request.fields['direccion'] = address;
     }
 
-    if (image != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath('fotos', image.path),
-      );
+    if (images != null) {
+      for (var img in images) {
+        request.files.add(
+          await http.MultipartFile.fromPath('fotos', img.path),
+        );
+      }
     }
     if (audio != null) {
       request.files.add(

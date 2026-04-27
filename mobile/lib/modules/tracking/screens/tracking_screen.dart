@@ -4,17 +4,17 @@
 ///   - Recibe actualizaciones de posición del técnico.
 ///   - Envía posición del cliente/técnico si está habilitado.
 ///
-/// Muestra un mapa simplificado con coordenadas y permite activar
-/// el envío de GPS propio. (Mapa real con google_maps_flutter requeriría
-/// API key adicional — se usa visualización con coordenadas por ahora.)
+/// Implementación con flutter_map y OSM (OpenStreetMap) sin API Keys.
 library;
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/location_service.dart';
@@ -36,9 +36,10 @@ class TrackingScreen extends StatefulWidget {
 
 class _TrackingScreenState extends State<TrackingScreen> {
   final LocationTrackingService _trackingService = LocationTrackingService();
+  final MapController _mapController = MapController();
 
-  double? _remoteLat;
-  double? _remoteLng;
+  LatLng? _myPosition;
+  LatLng? _remotePosition;
   String? _remoteRole;
   String? _remoteTimestamp;
 
@@ -46,57 +47,105 @@ class _TrackingScreenState extends State<TrackingScreen> {
   bool _proximityAlertShown = false;
   StreamSubscription<dynamic>? _sub;
   String _status = 'Conectando...';
+  
+  double _distanceKm = 0.0;
+  int _etaMinutes = 0;
 
   @override
   void initState() {
     super.initState();
+    _initMyPosition();
     _connect();
   }
-
-  Future<void> _checkProximity(double tLat, double tLng) async {
-    if (_proximityAlertShown || widget.role != 'cliente') return;
+  
+  Future<void> _initMyPosition() async {
     try {
-      final pos = await Geolocator.getLastKnownPosition();
-      if (pos == null) return;
-      final distanceMeters = Geolocator.distanceBetween(pos.latitude, pos.longitude, tLat, tLng);
-      if (distanceMeters < 500) {
-        _proximityAlertShown = true;
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                '🚨 ¡PREPÁRATE! El técnico está a menos de 500 metros.',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              backgroundColor: const Color(0xFFFF6B6B),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
-              dismissDirection: DismissDirection.up,
-              duration: const Duration(seconds: 10),
-            ),
-          );
-        }
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (mounted) {
+        setState(() {
+          _myPosition = LatLng(pos.latitude, pos.longitude);
+        });
+        _updateMapBounds();
       }
     } catch (_) {}
   }
 
+  void _calculateDistanceAndETA() {
+    if (_myPosition == null || _remotePosition == null) return;
+    
+    // Distancia en metros
+    const distance = Distance();
+    final meters = distance.as(LengthUnit.Meter, _myPosition!, _remotePosition!);
+    
+    setState(() {
+      _distanceKm = meters / 1000.0;
+      // Asumimos velocidad urbana promedio de 30 km/h (500 metros por minuto)
+      _etaMinutes = (meters / 500).ceil();
+    });
+  }
+
+  void _updateMapBounds() {
+    if (_myPosition == null) return;
+    
+    if (_remotePosition != null) {
+      // Ajustar bounds para mostrar ambos
+      final bounds = LatLngBounds.fromPoints([_myPosition!, _remotePosition!]);
+      _mapController.fitCamera(CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(50.0),
+      ));
+    } else {
+      // Centrar solo en mi posición
+      _mapController.move(_myPosition!, 15.0);
+    }
+  }
+
+  Future<void> _checkProximity() async {
+    if (_proximityAlertShown || widget.role != 'cliente' || _distanceKm == 0) return;
+    
+    if (_distanceKm < 0.5) { // menos de 500 metros
+      _proximityAlertShown = true;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              '🚨 ¡PREPÁRATE! El técnico está a menos de 500 metros.',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            backgroundColor: const Color(0xFFFF6B6B),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(top: 50, left: 20, right: 20),
+            dismissDirection: DismissDirection.up,
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
+    }
+  }
+
   void _connect() {
     _trackingService.connectTracking(widget.incidentId);
-    setState(() => _status = '🟢 Conectado — Incidente #${widget.incidentId}');
+    setState(() => _status = '🟢 Conectado');
 
     _sub = _trackingService.locationStream?.listen(
       (data) {
         if (data is Map<String, dynamic>) {
           final type = data['type'] as String?;
           if (type == 'location_update') {
-            setState(() {
-              _remoteLat = (data['lat'] as num?)?.toDouble();
-              _remoteLng = (data['lng'] as num?)?.toDouble();
-              _remoteRole = data['role'] as String?;
-              _remoteTimestamp = data['timestamp'] as String?;
-            });
-            if (_remoteLat != null && _remoteLng != null) {
-              _checkProximity(_remoteLat!, _remoteLng!);
+            final lat = (data['lat'] as num?)?.toDouble();
+            final lng = (data['lng'] as num?)?.toDouble();
+            
+            if (lat != null && lng != null) {
+              setState(() {
+                _remotePosition = LatLng(lat, lng);
+                _remoteRole = data['role'] as String?;
+                _remoteTimestamp = data['timestamp'] as String?;
+                _status = '📍 Ubicación recibida';
+              });
+              
+              _calculateDistanceAndETA();
+              _updateMapBounds();
+              _checkProximity();
             }
           }
         }
@@ -113,6 +162,18 @@ class _TrackingScreenState extends State<TrackingScreen> {
     } else {
       _trackingService.startSendingLocation(widget.role);
       setState(() => _sendingLocation = true);
+      
+      // Actualizar posición propia localmente también
+      Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)
+      ).listen((pos) {
+        if (mounted && _sendingLocation) {
+          setState(() {
+            _myPosition = LatLng(pos.latitude, pos.longitude);
+            _calculateDistanceAndETA();
+          });
+        }
+      });
     }
   }
 
@@ -134,177 +195,186 @@ class _TrackingScreenState extends State<TrackingScreen> {
           children: [
             const Text('Tracking en Tiempo Real', style: TextStyle(color: Color(0xFF00F2FF), fontSize: 15)),
             Text(
-              'Incidente #${widget.incidentId}',
+              'Incidente #${widget.incidentId} · $_status',
               style: const TextStyle(color: Colors.white38, fontSize: 11),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.my_location, color: Color(0xFF00F2FF)),
+            onPressed: _updateMapBounds,
+            tooltip: 'Centrar mapa',
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Estado de conexión
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111629),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF00F2FF).withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                _status,
-                style: const TextStyle(color: Color(0xFF00F2FF), fontSize: 13),
-              ),
+      body: Stack(
+        children: [
+          // 1. EL MAPA (OSM via flutter_map)
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _myPosition ?? const LatLng(-17.7833, -63.1821), // Santa Cruz fallback
+              initialZoom: 14.0,
             ),
-            const SizedBox(height: 20),
-
-            // Ubicación remota recibida
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111629),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _remoteLat != null
-                      ? Colors.greenAccent.withValues(alpha: 0.3)
-                      : Colors.white12,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.rutaigeoproxi.app',
+              ),
+              // Línea conectando ambos puntos
+              if (_myPosition != null && _remotePosition != null)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: [_myPosition!, _remotePosition!],
+                      strokeWidth: 4.0,
+                      color: const Color(0xFF00F2FF).withOpacity(0.7),
+                    ),
+                  ],
                 ),
+              // Marcadores
+              MarkerLayer(
+                markers: [
+                  // Mi posición (Cliente)
+                  if (_myPosition != null)
+                    Marker(
+                      point: _myPosition!,
+                      width: 50,
+                      height: 50,
+                      child: const _MapPin(
+                        icon: Icons.person_pin_circle,
+                        color: Color(0xFF00F2FF),
+                      ),
+                    ),
+                  // Posición remota (Técnico)
+                  if (_remotePosition != null)
+                    Marker(
+                      point: _remotePosition!,
+                      width: 50,
+                      height: 50,
+                      child: const _MapPin(
+                        icon: Icons.directions_car,
+                        color: Color(0xFFFF6B6B),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          
+          // 2. PANEL INFERIOR (Estilo Yango/Uber)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Color(0xFF111629),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black54, blurRadius: 20, offset: Offset(0, -5))
+                ],
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Info del Técnico / Distancia
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        color: _remoteLat != null ? Colors.greenAccent : Colors.white24,
-                        size: 20,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00F2FF).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.engineering, color: Color(0xFF00F2FF), size: 28),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _remoteRole != null
-                            ? 'Ubicación del ${_remoteRole == "tecnico" ? "Técnico" : "Cliente"}'
-                            : 'Sin ubicación recibida',
-                        style: TextStyle(
-                          color: _remoteLat != null ? Colors.white : Colors.white38,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _remoteRole == 'tecnico' ? 'Técnico Asignado' : 'Esperando Técnico...',
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            if (_remotePosition != null)
+                              Text(
+                                'A ${_distanceKm.toStringAsFixed(1)} km de distancia',
+                                style: const TextStyle(color: Colors.white54, fontSize: 13),
+                              )
+                            else
+                              const Text('Ubicación no disponible', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                          ],
                         ),
                       ),
+                      if (_remotePosition != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF00F2FF).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('$_etaMinutes', style: const TextStyle(color: Color(0xFF00F2FF), fontSize: 18, fontWeight: FontWeight.bold)),
+                              const Text('MIN', style: TextStyle(color: Color(0xFF00F2FF), fontSize: 10, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
-                  if (_remoteLat != null) ...[
-                    const SizedBox(height: 12),
-                    _CoordRow('Latitud', _remoteLat!.toStringAsFixed(6)),
-                    const SizedBox(height: 6),
-                    _CoordRow('Longitud', _remoteLng!.toStringAsFixed(6)),
-                    if (_remoteTimestamp != null) ...[
-                      const SizedBox(height: 6),
-                      _CoordRow(
-                        'Actualizado',
-                        _remoteTimestamp!.length > 19
-                            ? _remoteTimestamp!.substring(11, 19)
-                            : _remoteTimestamp!,
+                  const SizedBox(height: 20),
+                  
+                  // Botón Diagnóstico IA
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoadingAI ? null : _showAIDiagnosis,
+                      icon: _isLoadingAI 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                        : const Icon(Icons.psychology),
+                      label: const Text(
+                        'VER DIAGNÓSTICO IA',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    ],
-                  ] else
-                    const Padding(
-                      padding: EdgeInsets.only(top: 10),
-                      child: Text(
-                        'Esperando actualizaciones de posición...',
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Rol propio
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111629),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.person_pin_circle, color: Color(0xFF00F2FF), size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tu rol: ${widget.role}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _sendingLocation
-                          ? Colors.greenAccent.withValues(alpha: 0.15)
-                          : Colors.white12,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _sendingLocation ? 'Enviando GPS' : 'GPS inactivo',
-                      style: TextStyle(
-                        color: _sendingLocation ? Colors.greenAccent : Colors.white38,
-                        fontSize: 11,
+                  const SizedBox(height: 12),
+
+                  // Botón toggle GPS
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _toggleSendLocation,
+                      icon: Icon(_sendingLocation ? Icons.location_off : Icons.my_location),
+                      label: Text(
+                        _sendingLocation ? 'DETENER MI GPS' : 'COMPARTIR MI GPS',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _sendingLocation
+                            ? const Color(0xFFFF6B6B)
+                            : const Color(0xFF00F2FF),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-
-            const Spacer(),
-
-            // Botón Diagnóstico IA
-            SizedBox(
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _isLoadingAI ? null : _showAIDiagnosis,
-                icon: _isLoadingAI 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                  : const Icon(Icons.psychology),
-                label: const Text(
-                  'VER DIAGNÓSTICO IA',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Botón toggle GPS
-            SizedBox(
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _toggleSendLocation,
-                icon: Icon(_sendingLocation ? Icons.location_off : Icons.my_location),
-                label: Text(
-                  _sendingLocation ? 'DETENER ENVÍO DE GPS' : 'INICIAR ENVÍO DE GPS',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _sendingLocation
-                      ? const Color(0xFFFF6B6B)
-                      : const Color(0xFF00F2FF),
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -392,18 +462,36 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 }
 
-class _CoordRow extends StatelessWidget {
-  final String label;
-  final String value;
+class _MapPin extends StatelessWidget {
+  final IconData icon;
+  final Color color;
 
-  const _CoordRow(this.label, this.value);
+  const _MapPin({required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Stack(
+      alignment: Alignment.center,
       children: [
-        Text('$label: ', style: const TextStyle(color: Colors.white38, fontSize: 13)),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace')),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+        ),
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(0, 2))],
+          ),
+          child: Icon(icon, color: Colors.white, size: 18),
+        ),
       ],
     );
   }

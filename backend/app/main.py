@@ -51,6 +51,7 @@ from app.modules.p3_talleres.routes import router as workshops_router
 from app.modules.p4_asignacion.routes import router as assignments_router
 from app.modules.p5_pagos.routes import router as payments_router
 from app.modules.p6_reportes.routes import router as reports_router
+from app.modules.p6_auditoria.routes import router as audit_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -137,8 +138,9 @@ app.include_router(workshops_router)
 app.include_router(assignments_router)
 # P5: Pagos y Notificaciones
 app.include_router(payments_router)
-# P6: Reportes
+# P6: Reportes y Auditoría
 app.include_router(reports_router)
+app.include_router(audit_router)
 
 
 # ── Root endpoint ──

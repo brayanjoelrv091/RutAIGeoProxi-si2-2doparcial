@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../backend.dart';
 
 class ReportIncidentScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
   
   // Hardware States
   Position? _currentPosition;
-  File? _imageFile;
+  List<File> _imageFiles = [];
   File? _audioFile;
   
   // Audio Recorder State
@@ -82,21 +83,89 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     }
   }
 
+  Future<void> _showImageSourceActionSheet() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111629),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF00F2FF)),
+              title: const Text('Tomar Foto', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _takePhoto();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF00F2FF)),
+              title: const Text('Elegir de Galería', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                _pickFromGallery();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _takePhoto() async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80, // Comprimir un poco para envío rápido
+        imageQuality: 80,
       );
       if (image != null) {
-        setState(() => _imageFile = File(image.path));
+        setState(() => _imageFiles.add(File(image.path)));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('📸 Fotografía capturada')),
         );
       }
     } catch (e) {
       _showError('Error al abrir cámara: $e');
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final List<XFile> images = await picker.pickMultiImage(
+        imageQuality: 80,
+      );
+      if (images.isNotEmpty) {
+        setState(() {
+          _imageFiles.addAll(images.map((img) => File(img.path)));
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('📸 ${images.length} foto(s) seleccionada(s)')),
+        );
+      }
+    } catch (e) {
+      _showError('Error al abrir galería: $e');
+    }
+  }
+
+  Future<void> _pickAudioFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _audioFile = File(result.files.single.path!);
+          _isRecording = false; // Por si estaba grabando
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('🎵 Archivo de audio cargado')),
+        );
+      }
+    } catch (e) {
+      _showError('Error al seleccionar audio: $e');
     }
   }
 
@@ -141,8 +210,8 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       setState(() => _error = "Debe obtener su ubicación GPS primero.");
       return;
     }
-    if (_imageFile == null) {
-      setState(() => _error = "Se requiere una fotografía para la IA Roboflow.");
+    if (_imageFiles.isEmpty) {
+      setState(() => _error = "Se requiere al menos una fotografía para la IA Roboflow.");
       return;
     }
 
@@ -157,7 +226,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       lat: _currentPosition!.latitude,
       lng: _currentPosition!.longitude,
       address: "Ubicación detectada por GPS",
-      image: _imageFile,
+      images: _imageFiles.isEmpty ? null : _imageFiles,
       audio: _audioFile,
     );
 
@@ -216,23 +285,97 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _HardwareButton(
-                      icon: Icons.camera_alt,
-                      label: _imageFile != null ? 'Foto Lista' : 'Tomar Foto',
-                      color: _imageFile != null ? const Color(0xFF00E676) : const Color(0xFF00F2FF),
-                      onTap: _takePhoto,
+                      icon: _imageFiles.isNotEmpty ? Icons.photo_library : Icons.camera_alt,
+                      label: _imageFiles.isNotEmpty ? '${_imageFiles.length} Fotos' : 'Fotos',
+                      color: _imageFiles.isNotEmpty ? const Color(0xFF00E676) : const Color(0xFF00F2FF),
+                      onTap: _showImageSourceActionSheet,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _HardwareButton(
                       icon: _isRecording ? Icons.stop : Icons.mic,
-                      label: _isRecording ? 'Grabando...' : (_audioFile != null ? 'Audio Listo' : 'Voz (Whisper)'),
+                      label: _isRecording ? 'Grabando...' : (_audioFile != null ? 'Audio Listo' : 'Voz / Archivo'),
                       color: _isRecording ? Colors.redAccent : (_audioFile != null ? const Color(0xFF00E676) : const Color(0xFF00F2FF)),
                       onTap: _toggleRecording,
+                      onLongPress: _pickAudioFile,
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              
+              // Sección de Miniaturas (Thumbnails)
+              if (_imageFiles.isNotEmpty || _audioFile != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111629),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Archivos Adjuntos:', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ..._imageFiles.map((file) => Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(file, width: 60, height: 60, fit: BoxFit.cover),
+                                  ),
+                                  Positioned(
+                                    top: 0, right: 0,
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _imageFiles.remove(file)),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            )),
+                            if (_audioFile != null)
+                              Container(
+                                width: 60, height: 60,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00F2FF).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    const Icon(Icons.audio_file, color: Color(0xFF00F2FF), size: 30),
+                                    Positioned(
+                                      top: 0, right: 0,
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _audioFile = null),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 24),
 
               TextFormField(
@@ -302,13 +445,21 @@ class _HardwareButton extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
-  const _HardwareButton({required this.icon, required this.label, required this.color, required this.onTap});
+  const _HardwareButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
