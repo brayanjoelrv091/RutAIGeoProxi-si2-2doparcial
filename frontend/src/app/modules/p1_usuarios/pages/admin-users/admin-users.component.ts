@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '../../../../environment';
 import { AuthService } from '../../auth.service';
 
 interface User {
@@ -57,7 +57,7 @@ export class AdminUsersComponent implements OnInit {
   }
 
   async fetchUsers() {
-    const token = this.auth.getToken();
+    const token = this.auth.token;
     const res = await fetch(`${environment.apiUrl}/admin/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -67,7 +67,7 @@ export class AdminUsersComponent implements OnInit {
   }
 
   async fetchAudit() {
-    const token = this.auth.getToken();
+    const token = this.auth.token;
     const res = await fetch(`${environment.apiUrl}/admin/audit`, {
       headers: { Authorization: `Bearer ${token}` }
     });

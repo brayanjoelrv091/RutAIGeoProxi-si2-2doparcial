@@ -110,7 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                   _buildField(
                     controller: _passCtrl,
-                    label: 'Contrasena (min 8 caract.)',
+                    label: 'Contraseña',
+                    helperText: 'Mínimo 8 caracteres, 1 mayúscula, 1 número',
                     icon: Icons.lock_outline,
                     obscure: _obscurePass,
                     suffixIcon: IconButton(
@@ -126,11 +127,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'Ingresa una contrasena';
+                        return 'Ingresa una contraseña';
                       }
-                      if (v.length < 8) return 'Minimo 8 caracteres';
+                      if (v.length < 8) return 'Mínimo 8 caracteres';
                       if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$').hasMatch(v)) {
-                        return 'Debe incluir al menos 1 mayuscula y 1 numero';
+                        return 'Debe incluir al menos 1 mayúscula y 1 número';
                       }
                       return null;
                     },
@@ -193,6 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     bool obscure = false,
     TextInputType? keyboardType,
     Widget? suffixIcon,
+    String? helperText,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -204,6 +206,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white54),
+        helperText: helperText,
+        helperMaxLines: 2,
+        helperStyle: const TextStyle(color: Colors.white54),
         prefixIcon: Icon(icon, color: const Color(0xFF00F2FF)),
         suffixIcon: suffixIcon,
         filled: true,
