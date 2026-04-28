@@ -15,5 +15,4 @@ class ReporteResponse(ReporteBase):
     fecha_generacion: datetime
     ruta_archivo: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

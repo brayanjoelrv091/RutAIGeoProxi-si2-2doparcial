@@ -19,8 +19,7 @@ class BitacoraOut(BaseModel):
     ip: str | None = None
     creado_en: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 @router.get("", response_model=List[BitacoraOut], summary="Listar bitácora de auditoría (Solo Admin)")
 def list_audit_logs(

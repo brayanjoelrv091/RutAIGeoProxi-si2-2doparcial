@@ -17,8 +17,7 @@ class PagoResponse(PagoBase):
     transaccion_id: Optional[str]
     creado_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class NotificacionBase(BaseModel):
     usuario_id: int
