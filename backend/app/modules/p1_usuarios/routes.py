@@ -236,7 +236,7 @@ def update_fcm_token(
     db.commit()
     return None
 
-@profile_router.put(
+@profile_router.patch(
     "/password",
     summary="Cambiar contraseña internamente",
 )

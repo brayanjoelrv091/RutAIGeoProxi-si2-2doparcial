@@ -1,12 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { AuthService } from './modules/p1_usuarios/auth.service';
 import { WebSocketService } from './modules/shared/websocket.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  standalone: true,
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })

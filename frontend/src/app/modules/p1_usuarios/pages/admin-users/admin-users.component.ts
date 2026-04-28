@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../../environment';
@@ -24,7 +24,7 @@ interface Bitacora {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DatePipe],
   templateUrl: './admin-users.component.html',
   styleUrls: ['./admin-users.component.css'],
 })
