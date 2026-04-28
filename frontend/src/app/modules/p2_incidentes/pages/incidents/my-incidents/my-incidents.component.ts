@@ -19,9 +19,14 @@ export class MyIncidentsComponent implements OnInit {
   error = '';
   assignMessage = '';
   is_admin = false;
+  is_cliente = false;
+  is_taller = false;
 
   ngOnInit(): void {
-    this.is_admin = sessionStorage.getItem('user_role') === 'admin';
+    const role = sessionStorage.getItem('user_role');
+    this.is_admin = role === 'admin';
+    this.is_cliente = role === 'cliente';
+    this.is_taller = role === 'taller';
     this.load();
   }
 

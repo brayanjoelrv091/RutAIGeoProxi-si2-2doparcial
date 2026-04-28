@@ -1,7 +1,7 @@
 <div class="tech-bg"></div>
 <div class="page-container">
   <h1 class="neon-title">{{ is_admin ? 'Gestion Global de Incidentes' : 'Mis Incidentes' }}</h1>
-  @if (!is_admin) {
+  @if (is_cliente) {
     <a routerLink="/incidents/report" class="btn-premium small">Nuevo Reporte</a>
   }
 

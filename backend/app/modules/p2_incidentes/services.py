@@ -7,7 +7,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, UploadFile, status, BackgroundTasks
 from sqlalchemy.orm import Session, joinedload
 
 from app.modules.p2_incidentes.classifier import ClassificationResult, get_classifier
@@ -33,6 +33,7 @@ class IncidentService:
         payload: IncidentCreate,
         fotos: list[UploadFile] | None = None,
         audio: UploadFile | None = None,
+        background_tasks: BackgroundTasks | None = None,
     ) -> Incidente:
         """
         CU7 — Reportar incidente con fotos, audio y ubicación GPS.
@@ -160,6 +161,22 @@ class IncidentService:
                 os.rmdir(audio_temp_dir)
             except OSError:
                 pass
+
+        # 5. ASIGNACIÓN AUTOMÁTICA (REQUERIMIENTO INTELIGENTE)
+        if incidente.estado == "clasificado":
+            try:
+                from app.modules.p4_asignacion.services import AssignmentService
+                # Intentar asignar automáticamente en el radio por defecto (50km)
+                AssignmentService.auto_assign(db, incidente.id, background_tasks=background_tasks)
+                
+                # Auditoría de asignación automática
+                AuditService.log(
+                    db,
+                    accion=f"Asignación automática disparada para incidente #{incidente.id}",
+                    rol="Sistema"
+                )
+            except Exception as e:
+                logger.error(f"No se pudo auto-asignar incidente #{incidente.id}: {e}")
 
         return incidente
 

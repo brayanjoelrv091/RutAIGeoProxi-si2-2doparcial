@@ -9,7 +9,7 @@ Endpoints:
     POST   /incidents/{id}/classify → CU8 Re-clasificar
 """
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.shared.deps import get_current_user, get_db, require_roles
@@ -39,6 +39,7 @@ async def create_incident(
     direccion: str | None = Form(default=None),
     fotos: list[UploadFile] = File(default=[]),
     audio: UploadFile | None = File(default=None),
+    background_tasks: BackgroundTasks = Depends(),
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
@@ -55,6 +56,7 @@ async def create_incident(
         payload=payload,
         fotos=fotos if fotos else None,
         audio=audio,
+        background_tasks=background_tasks
     )
     # Reload con relaciones
     return IncidentService.get_detail(db, incidente.id)
