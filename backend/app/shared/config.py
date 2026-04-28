@@ -15,7 +15,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 
 class Settings:
     # ── Base de datos ──────────────────────────────────────────────────
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./rutaigeoproxi.db")
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", 
+        "postgresql://rutai_db_user:tRtlGpIRVZJqeznt5DXpIRnM00b9ly7v@dpg-d7nbd8dckfvc73et4mjg-a.oregon-postgres.render.com/rutai_db"
+    )
     POSTGRES_DATABASE_URL: str | None = os.getenv("POSTGRES_DATABASE_URL")
 
     # ── JWT ────────────────────────────────────────────────────────────
