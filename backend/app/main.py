@@ -80,7 +80,7 @@ async def lifespan(_app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️  Firebase no inicializado (no crítico): {e}")
 
-    # Seed del administrador
+    # Seed del administrador — no crítico: si falla, el servidor sigue en pie.
     if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
         db = SessionLocal()
         try:
@@ -100,6 +100,9 @@ async def lifespan(_app: FastAPI):
                 )
                 db.commit()
                 logger.info(f"👤 Admin seed creado: {settings.ADMIN_EMAIL}")
+        except Exception as seed_err:
+            db.rollback()
+            logger.warning(f"⚠️  Admin seed omitido (no crítico): {seed_err}")
         finally:
             db.close()
 
