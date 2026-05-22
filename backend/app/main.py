@@ -43,6 +43,7 @@ from app.modules.p3_talleres.models import (  # noqa: F401
 from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
 from app.modules.p5_pagos.models import Pago, Notificacion  # noqa: F401
 from app.modules.p6_reportes.models import ReporteGenerado  # noqa: F401
+from app.modules.p6_auditoria.models import Bitacora  # noqa: F401
 
 # ── Importar routers de módulos ──
 from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router

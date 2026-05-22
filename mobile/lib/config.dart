@@ -1,11 +1,11 @@
 /// Configuración de conexión al backend.
 ///
-/// Producción: Render cloud (https://rutaigeoproxi-back.onrender.com)
+/// Producción: Render cloud (https://rutai-backend.onrender.com)
 /// Desarrollo: Descomentar las líneas de localhost/10.0.2.2
 
 class AppConfig {
   // ── Producción (Render) ──
-  static const String baseUrl = 'https://rutaigeoproxi-back.onrender.com';
+  static const String baseUrl = 'https://rutai-backend.onrender.com';
 
   // ── Desarrollo local (descomentar si trabajas en local) ──
   // import 'dart:io'; // ← mover al top del archivo si usas esto
