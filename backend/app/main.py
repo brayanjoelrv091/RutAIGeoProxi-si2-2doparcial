@@ -65,11 +65,20 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Crea tablas y seed del admin al iniciar."""
-    from app.shared.firebase_config import init_firebase
     logger.info("🚀 Creando tablas en la base de datos...")
     Base.metadata.create_all(bind=engine)
-    init_firebase()
     logger.info("✅ Tablas creadas/verificadas")
+
+    # Firebase Admin SDK es opcional — solo para notificaciones push.
+    # Si el paquete no está instalado o las credenciales no están configuradas,
+    # el servidor sigue funcionando con normalidad.
+    try:
+        from app.shared.firebase_config import init_firebase
+        init_firebase()
+    except ModuleNotFoundError:
+        logger.warning("⚠️  firebase_admin no instalado — notificaciones push desactivadas.")
+    except Exception as e:
+        logger.warning(f"⚠️  Firebase no inicializado (no crítico): {e}")
 
     # Seed del administrador
     if settings.ADMIN_EMAIL and settings.ADMIN_PASSWORD:
