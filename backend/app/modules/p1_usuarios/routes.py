@@ -71,9 +71,15 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     summary="CU1 · Iniciar sesión",
 )
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    token_resp = AuthService.login(db, payload)
-    AuditService.log(db, accion=f"Inicio de sesión exitoso ({payload.email})", request=request)
-    return token_resp
+    import traceback
+    try:
+        token_resp = AuthService.login(db, payload)
+        AuditService.log(db, accion=f"Inicio de sesión exitoso ({payload.email})", request=request)
+        return token_resp
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{str(e)}\n{traceback.format_exc()}")
 
 
 @auth_router.post(
