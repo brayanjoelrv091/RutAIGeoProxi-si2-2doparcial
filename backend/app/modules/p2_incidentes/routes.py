@@ -32,6 +32,7 @@ router = APIRouter(prefix="/incidents", tags=["P2 · Incidentes"])
     summary="CU7 · Reportar incidente con fotos/audio/GPS",
 )
 async def create_incident(
+    background_tasks: BackgroundTasks,
     titulo: str = Form(..., min_length=3, max_length=300),
     latitud: float = Form(...),
     longitud: float = Form(...),
@@ -39,7 +40,6 @@ async def create_incident(
     direccion: str | None = Form(default=None),
     fotos: list[UploadFile] = File(default=[]),
     audio: UploadFile | None = File(default=None),
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
