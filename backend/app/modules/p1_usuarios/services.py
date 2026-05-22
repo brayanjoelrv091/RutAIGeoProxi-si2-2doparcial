@@ -73,7 +73,7 @@ class AuthService:
     def login(db: Session, payload: LoginRequest) -> TokenResponse:
         """CU1 — Inicio de sesión con JWT y Rate Limiting."""
         user = db.query(Usuario).filter(Usuario.email == payload.email).first()
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc)
 
         if not user:
             raise HTTPException(
@@ -87,12 +87,14 @@ class AuthService:
                 detail="Cuenta desactivada permanentemente. Por favor, contacta a soporte@rutaigeoproxi.com",
             )
 
-        if user.bloqueado_hasta and user.bloqueado_hasta > now:
-            mins_left = int((user.bloqueado_hasta - now).total_seconds() / 60)
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Demasiados intentos. Tu cuenta ha sido bloqueada temporalmente por {mins_left or 1} minutos por seguridad.",
-            )
+        if user.bloqueado_hasta:
+            bh = user.bloqueado_hasta.replace(tzinfo=timezone.utc) if user.bloqueado_hasta.tzinfo is None else user.bloqueado_hasta
+            if bh > now:
+                mins_left = int((bh - now).total_seconds() / 60)
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Demasiados intentos. Tu cuenta ha sido bloqueada temporalmente por {mins_left or 1} minutos por seguridad.",
+                )
 
         if not verify_password(payload.password, user.hashed_password):
             user.intentos_fallidos += 1
