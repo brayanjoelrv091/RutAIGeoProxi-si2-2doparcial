@@ -39,7 +39,7 @@ async def create_incident(
     direccion: str | None = Form(default=None),
     fotos: list[UploadFile] = File(default=[]),
     audio: UploadFile | None = File(default=None),
-    background_tasks: BackgroundTasks = Depends(),
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
