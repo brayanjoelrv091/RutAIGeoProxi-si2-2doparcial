@@ -218,6 +218,155 @@
     </div>
   </section>
 
+  <!-- ════════════════════════════ TIEMPO REAL ════════════════════════ -->
+  <section id="realtime" class="py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14 reveal">
+        <span class="text-brand-cyan text-xs font-mono tracking-widest uppercase">Ciclo 4 · Nuevo</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Todo en <span class="gradient-text">tiempo real</span></h2>
+        <p class="text-gray-400 mt-3 max-w-2xl mx-auto">WebSockets bidireccionales. 7 estados de flujo. Tracking GPS del técnico en vivo. Notificaciones instantáneas.</p>
+      </div>
+
+      <!-- State Flow Animation -->
+      <div class="glass rounded-2xl p-8 mb-8 reveal">
+        <p class="text-gray-500 text-xs uppercase tracking-wider mb-4 text-center">Máquina de Estados del Incidente</p>
+        <div class="state-flow">
+          <span class="state-node bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">⏳ Pendiente</span>
+          <span class="state-arrow">→</span>
+          <span class="state-node bg-blue-500/20 text-blue-400 border border-blue-500/30">🔍 Buscando</span>
+          <span class="state-arrow">→</span>
+          <span class="state-node bg-purple-500/20 text-purple-400 border border-purple-500/30">🏪 Asignado</span>
+          <span class="state-arrow">→</span>
+          <span class="state-node bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">🚗 En Camino</span>
+          <span class="state-arrow">→</span>
+          <span class="state-node bg-orange-500/20 text-orange-400 border border-orange-500/30">🔧 Atención</span>
+          <span class="state-arrow">→</span>
+          <span class="state-node bg-green-500/20 text-green-400 border border-green-500/30">✅ Finalizado</span>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- CU-24 WebSocket -->
+        <div class="feature-card rounded-2xl p-6 reveal" style="transition-delay:0.1s">
+          <div class="w-12 h-12 bg-brand-cyan/20 rounded-xl flex items-center justify-center mb-4">
+            <span class="text-2xl">⚡</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">WebSocket Bidireccional</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Canal persistente con heartbeat, auto-reconnect y buffer. El cliente y taller reciben cada actualización en milisegundos.</p>
+          <div class="mt-4 flex flex-wrap gap-1">
+            <span class="bg-brand-cyan/10 text-brand-cyan text-xs px-2 py-1 rounded-full border border-brand-cyan/20">CU-24</span>
+            <span class="bg-brand-cyan/10 text-brand-cyan text-xs px-2 py-1 rounded-full border border-brand-cyan/20">JWT Auth</span>
+          </div>
+        </div>
+
+        <!-- CU-25 State Machine -->
+        <div class="feature-card rounded-2xl p-6 reveal" style="transition-delay:0.2s">
+          <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
+            <span class="text-2xl">🔄</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Estado en Vivo</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Máquina de estados finitos con 7 fases. Cada transición es validada, registrada y notificada al instante a todos los actores.</p>
+          <div class="mt-4 flex flex-wrap gap-1">
+            <span class="bg-purple-500/10 text-purple-400 text-xs px-2 py-1 rounded-full border border-purple-500/20">CU-25</span>
+            <span class="bg-purple-500/10 text-purple-400 text-xs px-2 py-1 rounded-full border border-purple-500/20">Timeline</span>
+          </div>
+        </div>
+
+        <!-- CU-26 GPS Tracking -->
+        <div class="feature-card rounded-2xl p-6 reveal" style="transition-delay:0.3s">
+          <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+            <span class="text-2xl">🛰</span>
+          </div>
+          <h3 class="text-white font-bold text-lg mb-2">Tracking GPS Vivo</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Sigue la ubicación del técnico en mapa en tiempo real. Velocidad, dirección, y precisión del GPS. Todo persistido en BD.</p>
+          <div class="mt-4 flex flex-wrap gap-1">
+            <span class="bg-green-500/10 text-green-400 text-xs px-2 py-1 rounded-full border border-green-500/20">CU-26</span>
+            <span class="bg-green-500/10 text-green-400 text-xs px-2 py-1 rounded-full border border-green-500/20">OpenStreetMap</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <!-- ════════════════════════════ OFFLINE ════════════════════════════ -->
+  <section id="offline" class="py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="glass rounded-3xl overflow-hidden reveal">
+        <div class="grid lg:grid-cols-2 gap-0">
+          <div class="p-10 lg:p-12">
+            <span class="text-green-400 text-xs font-mono tracking-widest uppercase">Modo Resiliente</span>
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 mb-4">
+              Funciona<br/><span class="gradient-text">sin internet.</span>
+            </h2>
+            <p class="text-gray-400 leading-relaxed mb-6">
+              ¿Sin señal? No importa. La app guarda tu emergencia localmente con un <strong class="text-white">UUID de deduplicación</strong>.
+              Cuando vuelva la conexión, se sincroniza <strong class="text-green-400">automáticamente</strong> sin duplicados.
+            </p>
+            <ul class="space-y-3 mb-6">
+              <li class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                </div>
+                <span class="text-gray-300 text-sm"><strong class="text-white">CU-21:</strong> Registro offline con cola local (IndexedDB + SharedPreferences)</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                </div>
+                <span class="text-gray-300 text-sm"><strong class="text-white">CU-22:</strong> Sincronización automática al recuperar conexión</span>
+              </li>
+              <li class="flex items-start gap-3">
+                <div class="w-5 h-5 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                </div>
+                <span class="text-gray-300 text-sm"><strong class="text-white">CU-23:</strong> Deduplicación por idempotency_key (0 duplicados)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-brand-dark p-8 flex items-center justify-center">
+            <div class="w-full max-w-xs space-y-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-green-400 font-mono text-xs font-bold">MODO OFFLINE</span>
+                <div class="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+              </div>
+              <!-- Offline queue card -->
+              <div class="bg-brand-card rounded-xl p-4 border border-yellow-500/30">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="text-lg">📡</span>
+                  <span class="text-white text-xs font-semibold">Cola de Sincronización</span>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between bg-brand-dark rounded-lg p-2">
+                    <span class="text-gray-400 text-xs">Motor recalentado</span>
+                    <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full">⏳ pendiente</span>
+                  </div>
+                  <div class="flex items-center justify-between bg-brand-dark rounded-lg p-2">
+                    <span class="text-gray-400 text-xs">Llanta pinchada</span>
+                    <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full">⏳ pendiente</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Sync result -->
+              <div class="bg-brand-card rounded-xl p-4 border border-green-500/30">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg">✅</span>
+                  <span class="text-green-400 text-xs font-semibold">Sincronizado</span>
+                </div>
+                <div class="flex items-center justify-between bg-brand-dark rounded-lg p-2">
+                  <span class="text-gray-400 text-xs">Batería descargada</span>
+                  <span class="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">✅ synced</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
   <!-- ════════════════════════════ CÓMO FUNCIONA ════════════════════ -->
   <section id="como-funciona" class="py-20">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
@@ -463,6 +612,47 @@
     </div>
   </section>
 
+  <!-- ════════════════════════════ SAAS MULTI-TENANT ════════════════ -->
+  <section id="saas" class="py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14 reveal">
+        <span class="text-blue-400 text-xs font-mono tracking-widest uppercase">Arquitectura · Ciclo 5</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mt-2">Plataforma <span class="gradient-text">SaaS Multi-Tenant</span></h2>
+        <p class="text-gray-400 mt-3 max-w-2xl mx-auto">Una sola plataforma. Múltiples redes de talleres. Datos completamente aislados.</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="glass rounded-2xl p-6 neon-border reveal">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-brand-cyan/20 rounded-lg flex items-center justify-center"><span class="text-xl">🏢</span></div>
+            <div><p class="text-white font-bold text-sm">Tenant A</p><p class="text-gray-500 text-xs">Auxilio Norte — 12 talleres</p></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-brand-cyan font-mono text-sm font-bold">234</p><p class="text-gray-600 text-xs">Incidentes</p></div>
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-brand-cyan font-mono text-sm font-bold">12</p><p class="text-gray-600 text-xs">Talleres</p></div>
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-green-400 font-mono text-sm font-bold">4.8</p><p class="text-gray-600 text-xs">Rating</p></div>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-6 neon-border reveal" style="transition-delay:0.1s">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center"><span class="text-xl">🏢</span></div>
+            <div><p class="text-white font-bold text-sm">Tenant B</p><p class="text-gray-500 text-xs">Mecánicos Express — 8 talleres</p></div>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-purple-400 font-mono text-sm font-bold">156</p><p class="text-gray-600 text-xs">Incidentes</p></div>
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-purple-400 font-mono text-sm font-bold">8</p><p class="text-gray-600 text-xs">Talleres</p></div>
+            <div class="bg-brand-dark rounded-lg p-2 text-center"><p class="text-green-400 font-mono text-sm font-bold">4.6</p><p class="text-gray-600 text-xs">Rating</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-8 reveal">
+        <div class="inline-flex items-center gap-2 glass rounded-full px-6 py-3 border border-blue-500/30">
+          <span class="text-blue-400 text-sm">🔒 Datos completamente aislados entre tenants</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
   <!-- ════════════════════════════ DOWNLOAD ════════════════════════= -->
   <section id="app-download" class="py-20 relative overflow-hidden">
     <div class="blob-1 absolute top-0 right-0 w-80 h-80 rounded-full blur-3xl opacity-30 pointer-events-none"></div>
