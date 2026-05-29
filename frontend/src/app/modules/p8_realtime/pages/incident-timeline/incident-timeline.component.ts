@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { environment } from '../../../../../environment';
+import { environment } from '../../../../environment';
 
 /**
  * P8 · CU-25 — Componente Timeline visual de estados del incidente.

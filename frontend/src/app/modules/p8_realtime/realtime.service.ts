@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, timer } from 'rxjs';
-import { environment } from '../../../environment';
+import { environment } from '../../environment';
 
 /**
  * P8 · CU-24 — Servicio WebSocket bidireccional con auto-reconnect.
