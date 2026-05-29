@@ -1,0 +1,75 @@
+<div class="timeline-container">
+  <!-- Header -->
+  <div class="timeline-header">
+    <h3>📋 Timeline del Incidente</h3>
+    <span class="incident-badge" *ngIf="timeline">#{{ timeline.incidente_id }}</span>
+  </div>
+
+  <!-- Current state -->
+  <div class="current-state" *ngIf="timeline">
+    <div class="state-indicator" [style.border-color]="getStateColor(timeline.estado_actual)">
+      <span class="state-dot" [style.background]="getStateColor(timeline.estado_actual)"></span>
+      <div>
+        <span class="state-name">{{ timeline.label_actual }}</span>
+        <span class="state-tag" *ngIf="timeline.es_terminal">Estado Final</span>
+      </div>
+    </div>
+
+    <div class="available-transitions" *ngIf="!timeline.es_terminal && timeline.transiciones_disponibles.length > 0">
+      <span class="transitions-label">Transiciones disponibles:</span>
+      <div class="transitions-list">
+        <span class="transition-chip" *ngFor="let t of timeline.transiciones_disponibles"
+              [style.border-color]="getStateColor(t)">
+          {{ t }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando timeline...</span>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" *ngIf="error">
+    <span>⚠️ {{ error }}</span>
+    <button (click)="loadTimeline()">Reintentar</button>
+  </div>
+
+  <!-- Timeline events -->
+  <div class="events-container" *ngIf="timeline && timeline.eventos.length > 0">
+    <div class="timeline-line"></div>
+
+    <div class="event-item" *ngFor="let event of timeline.eventos; let last = last">
+      <!-- Node -->
+      <div class="event-node" [style.background]="getStateColor(event.estado_nuevo)"></div>
+
+      <!-- Content -->
+      <div class="event-content">
+        <div class="event-transition">
+          <span class="from" [style.color]="getStateColor(event.estado_anterior)">{{ event.label_anterior }}</span>
+          <span class="arrow">→</span>
+          <span class="to" [style.color]="getStateColor(event.estado_nuevo)">{{ event.label_nuevo }}</span>
+        </div>
+
+        <div class="event-meta">
+          <span class="actor">{{ getRolIcon(event.actor_rol) }} {{ event.actor_rol || 'sistema' }}</span>
+          <span class="time">{{ formatTime(event.creado_en) }}</span>
+          <span class="date">{{ formatDate(event.creado_en) }}</span>
+        </div>
+
+        <div class="event-notes" *ngIf="event.notas">
+          <span>💬 {{ event.notas }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="timeline && timeline.eventos.length === 0">
+    <span class="empty-icon">📭</span>
+    <p>Sin eventos registrados aún</p>
+  </div>
+</div>

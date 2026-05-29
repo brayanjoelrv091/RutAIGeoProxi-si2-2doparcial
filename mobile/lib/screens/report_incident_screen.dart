@@ -5,7 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../backend.dart';
+import '../modules/offline/offline_queue.dart';
+import '../modules/offline/sync_manager.dart';
+import '../session.dart';
 
 class ReportIncidentScreen extends StatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -220,29 +224,72 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       _error = null;
     });
 
-    final res = await Backend.reportIncident(
-      title: _titleController.text,
-      description: _descriptionController.text.isNotEmpty ? _descriptionController.text : null,
-      lat: _currentPosition!.latitude,
-      lng: _currentPosition!.longitude,
-      address: "Ubicación detectada por GPS",
-      images: _imageFiles.isEmpty ? null : _imageFiles,
-      audio: _audioFile,
+    try {
+      final res = await Backend.reportIncident(
+        title: _titleController.text,
+        description: _descriptionController.text.isNotEmpty ? _descriptionController.text : null,
+        lat: _currentPosition!.latitude,
+        lng: _currentPosition!.longitude,
+        address: "Ubicación detectada por GPS",
+        images: _imageFiles.isEmpty ? null : _imageFiles,
+        audio: _audioFile,
+      );
+
+      if (mounted) {
+        setState(() => _loading = false);
+        if (res == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🚨 Incidente enviado. IA procesando...'),
+              backgroundColor: Color(0xFF00E676),
+            ),
+          );
+          Navigator.pop(context);
+        } else {
+          // If error is network related, fallback to offline
+          if (res.toLowerCase().contains('socket') || res.toLowerCase().contains('timeout') || res.toLowerCase().contains('conexión')) {
+            await _saveToOfflineQueue();
+          } else {
+            setState(() => _error = res);
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        await _saveToOfflineQueue();
+      }
+    }
+  }
+
+  Future<void> _saveToOfflineQueue() async {
+    final offlineItem = OfflineIncident(
+      idempotencyKey: const Uuid().v4(),
+      titulo: _titleController.text,
+      descripcion: _descriptionController.text.isNotEmpty ? _descriptionController.text : null,
+      latitud: _currentPosition!.latitude,
+      longitud: _currentPosition!.longitude,
+      direccion: "Guardado Offline (Sin conexión)",
+      createdAtLocal: DateTime.now().toUtc().toIso8601String(),
     );
 
+    await OfflineQueue.enqueue(offlineItem);
+    
+    // Trigger auto-sync attempt
+    final token = Session.token;
+    if (token != null) {
+      SyncManager().startAutoSync(token);
+    }
+
     if (mounted) {
-      setState(() => _loading = false);
-      if (res == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🚨 Incidente enviado. IA procesando...'),
-            backgroundColor: Color(0xFF00E676),
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        setState(() => _error = res);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📡 Sin conexión. Guardado en cola offline. Se enviará automáticamente.'),
+          backgroundColor: Color(0xFFF59E0B),
+          duration: Duration(seconds: 4),
+        ),
+      );
+      Navigator.pop(context);
     }
   }
 

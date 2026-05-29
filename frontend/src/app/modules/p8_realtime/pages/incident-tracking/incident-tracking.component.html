@@ -1,0 +1,62 @@
+<div class="tracking-container">
+  <!-- Header -->
+  <div class="tracking-header">
+    <div class="header-left">
+      <span class="connection-dot">{{ connectionIcon }}</span>
+      <h3>Tracking GPS en Vivo</h3>
+    </div>
+    <span class="incident-badge">Incidente #{{ incidentId }}</span>
+  </div>
+
+  <!-- Map placeholder (integrar con Leaflet/OpenLayers) -->
+  <div class="map-container">
+    <div class="map-placeholder" *ngIf="!lastPosition">
+      <div class="map-icon">🗺️</div>
+      <p>Esperando ubicación del técnico...</p>
+      <span class="state-label">{{ connectionState }}</span>
+    </div>
+
+    <div class="map-live" *ngIf="lastPosition">
+      <div class="map-icon large">📍</div>
+      <div class="coords">
+        <span>Lat: {{ lastPosition.lat | number:'1.6-6' }}</span>
+        <span>Lng: {{ lastPosition.lng | number:'1.6-6' }}</span>
+      </div>
+      <div class="role-badge" [class.tecnico]="lastPosition.role === 'tecnico'" [class.cliente]="lastPosition.role === 'cliente'">
+        {{ lastPosition.role === 'tecnico' ? '🔧 Técnico' : '🚗 Cliente' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar" *ngIf="lastPosition">
+    <div class="stat">
+      <span class="stat-value">{{ speed | number:'1.1-1' }}</span>
+      <span class="stat-label">km/h</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">{{ headingLabel }}</span>
+      <span class="stat-label">Dirección</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">{{ positions.length }}</span>
+      <span class="stat-label">Puntos</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">{{ connectionIcon }} {{ connectionState }}</span>
+      <span class="stat-label">Estado WS</span>
+    </div>
+  </div>
+
+  <!-- Position history -->
+  <div class="history-section" *ngIf="positions.length > 0">
+    <h4>Últimas posiciones</h4>
+    <div class="history-list">
+      <div class="history-item" *ngFor="let pos of positions.slice(-5).reverse()">
+        <span class="time">{{ pos.timestamp | date:'HH:mm:ss' }}</span>
+        <span class="coord">{{ pos.lat | number:'1.4-4' }}, {{ pos.lng | number:'1.4-4' }}</span>
+        <span class="role-tag">{{ pos.role }}</span>
+      </div>
+    </div>
+  </div>
+</div>

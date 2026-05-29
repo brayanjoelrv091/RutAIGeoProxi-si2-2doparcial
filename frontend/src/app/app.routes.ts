@@ -89,6 +89,18 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ── P8: Conectividad Resiliente y Tiempo Real (Ciclo 4) ──
+  {
+    path: 'realtime/tracking/:id',
+    loadComponent: () => import('./modules/p8_realtime/pages/incident-tracking/incident-tracking.component').then(m => m.IncidentTrackingComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'realtime/timeline/:id',
+    loadComponent: () => import('./modules/p8_realtime/pages/incident-timeline/incident-timeline.component').then(m => m.IncidentTimelineComponent),
+    canActivate: [authGuard]
+  },
+
   // ── P6: Reportes (CU19-CU20) ──
   {
     path: 'reports',

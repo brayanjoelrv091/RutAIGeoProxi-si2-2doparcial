@@ -40,15 +40,21 @@ class Incidente(Base):
     estado = Column(
         String(30),
         nullable=False,
-        default="nuevo",
+        default="pendiente",
         index=True,
-    )  # nuevo | clasificado | asignado | en_proceso | resuelto
+    )  # pendiente | buscando_taller | taller_asignado | en_camino | en_atencion | finalizado | cancelado
     latitud = Column(Float, nullable=False)
     longitud = Column(Float, nullable=False)
     direccion = Column(String(500), nullable=True)
     url_audio = Column(String(1000), nullable=True)
     severidad = Column(String(30), nullable=True)   # leve | moderado | grave | critico
     categoria = Column(String(50), nullable=True)    # mecanico | electrico | carroceria | ...
+    idempotency_key = Column(
+        String(64),
+        unique=True,
+        nullable=True,
+        index=True,
+    )  # CU-23: UUID generado por el cliente para deduplicación offline
     creado_en = Column(
         DateTime(timezone=True),
         nullable=False,

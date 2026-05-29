@@ -4,12 +4,15 @@ RutAIGeoProxi — API Backend (Monolito Modular).
 Entry point que registra todos los módulos y configura el servidor.
 
 Arquitectura:
-    P1 · Usuarios y Seguridad     (CU1-CU6)   ✅ Implementado
-    P2 · Gestión de Incidentes     (CU7-CU9)   ✅ Implementado
-    P3 · Gestión de Talleres       (CU10-CU13)  ✅ Implementado
-    P4 · Asignación y Logística    (CU14-CU15)  ✅ Implementado
-    P5 · Pagos y Notificaciones    (CU16-CU18)  ✅ Implementado
-    P6 · Reportes                  (CU19-CU20)  ✅ Implementado
+    P1 · Usuarios y Seguridad           (CU1-CU6)    ✅ Implementado
+    P2 · Gestión de Incidentes           (CU7-CU9)    ✅ Implementado
+    P3 · Gestión de Talleres             (CU10-CU13)  ✅ Implementado
+    P4 · Asignación y Logística          (CU14-CU15)  ✅ Implementado
+    P5 · Pagos y Notificaciones          (CU16-CU18)  ✅ Implementado
+    P6 · Reportes                        (CU19-CU20)  ✅ Implementado
+    P7 · Seguridad y Multi-Tenant        (Ciclo 5)    🔲 Placeholder
+    P8 · Conectividad Resiliente y RT    (CU21-CU26)  ✅ Implementado (Ciclo 4)
+    P9 · Analítica Operacional           (Ciclo 5)    🔲 Placeholder
 """
 
 import logging
@@ -44,6 +47,12 @@ from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
 from app.modules.p5_pagos.models import Pago, Notificacion  # noqa: F401
 from app.modules.p6_reportes.models import ReporteGenerado  # noqa: F401
 from app.modules.p6_auditoria.models import Bitacora  # noqa: F401
+# P7 — Placeholder (Ciclo 5)
+# from app.modules.p7_seguridad_multitenant.models import ...  # noqa: F401
+# P8 — Conectividad Resiliente y Tiempo Real (Ciclo 4)
+from app.modules.p8_realtime.models import EventoEstado, TrackingGPS  # noqa: F401
+# P9 — Placeholder (Ciclo 5)
+# from app.modules.p9_analitica.models import ...  # noqa: F401
 
 # ── Importar routers de módulos ──
 from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router
@@ -53,6 +62,9 @@ from app.modules.p4_asignacion.routes import router as assignments_router
 from app.modules.p5_pagos.routes import router as payments_router
 from app.modules.p6_reportes.routes import router as reports_router
 from app.modules.p6_auditoria.routes import router as audit_router
+from app.modules.p7_seguridad_multitenant.routes import router as tenant_router
+from app.modules.p8_realtime.routes import router as realtime_router
+from app.modules.p9_analitica.routes import router as analytics_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -120,8 +132,11 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="RutAIGeoProxi API",
-    description="Red de Asistencia Técnica Vehicular Inteligente — Monolito Modular",
-    version="2.1.0",
+    description=(
+        "Red de Asistencia Técnica Vehicular Inteligente — Monolito Modular. "
+        "Ciclo 4: Conectividad Resiliente, WebSockets y Tracking GPS en vivo."
+    ),
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -156,6 +171,12 @@ app.include_router(payments_router)
 # P6: Reportes y Auditoría
 app.include_router(reports_router)
 app.include_router(audit_router)
+# P7: Seguridad y Multi-Tenant (Ciclo 5 — Placeholder)
+app.include_router(tenant_router)
+# P8: Conectividad Resiliente y Tiempo Real (Ciclo 4)
+app.include_router(realtime_router)
+# P9: Analítica Operacional (Ciclo 5 — Placeholder)
+app.include_router(analytics_router)
 
 
 # ── Root endpoint ──
@@ -164,7 +185,7 @@ def root():
     """Mapa de la API por ciclo y caso de uso."""
     return {
         "api": "RutAIGeoProxi",
-        "version": "2.1.0",
+        "version": "3.0.0",
         "arquitectura": "Monolito Modular",
         "modulos": {
             "P1_usuarios_seguridad": {
@@ -203,6 +224,23 @@ def root():
                 "estado": "✅ Implementado",
                 "CU19_generacion_datos": "Backend logic",
                 "CU20_exportar_pdf_excel": "GET /reports/incidents/pdf | excel",
+            },
+            "P7_seguridad_multitenant": {
+                "estado": "🔲 Placeholder (Ciclo 5)",
+                "health": "GET /tenants/health",
+            },
+            "P8_conectividad_realtime": {
+                "estado": "✅ Implementado (Ciclo 4)",
+                "CU21_offline_registro": "POST /realtime/incidents/offline-sync",
+                "CU22_sync_cola": "POST /realtime/incidents/offline-sync (batch)",
+                "CU23_deduplicacion": "Idempotency key en sync batch",
+                "CU24_websocket_bidireccional": "WS /realtime/ws/incidents/{id} + WS /realtime/ws/notifications/{user_id}",
+                "CU25_estado_tiempo_real": "PATCH /realtime/incidents/{id}/state + GET /realtime/incidents/{id}/timeline",
+                "CU26_tracking_gps": "GET /realtime/incidents/{id}/tracking + WS location_update",
+            },
+            "P9_analitica_operacional": {
+                "estado": "🔲 Placeholder (Ciclo 5)",
+                "health": "GET /analytics/health",
             },
         },
         "docs": "/docs",
