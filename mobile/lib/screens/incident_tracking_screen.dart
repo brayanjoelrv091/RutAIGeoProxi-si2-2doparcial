@@ -47,8 +47,8 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
     _initWebSocket();
   }
 
-  void _initWebSocket() {
-    final token = Session.token ?? '';
+  Future<void> _initWebSocket() async {
+    final token = await Session.getToken() ?? '';
     _ws.connectToIncident(widget.incidentId, token);
 
     _wsStateSub = _ws.connectionState.listen((state) {

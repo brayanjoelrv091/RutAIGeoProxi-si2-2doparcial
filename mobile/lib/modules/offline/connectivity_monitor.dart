@@ -44,7 +44,7 @@ class ConnectivityMonitor {
   Future<bool> _checkNow() async {
     try {
       final response = await http
-          .get(Uri.parse('${AppConfig.apiBaseUrl}/'))
+          .get(Uri.parse('${AppConfig.baseUrl}/'))
           .timeout(const Duration(seconds: 5));
 
       final isOnline = response.statusCode == 200;

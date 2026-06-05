@@ -44,7 +44,7 @@ class WebSocketService {
   /// Conecta al canal de un incidente específico.
   void connectToIncident(int incidentId, String token) {
     _token = token;
-    final wsBase = AppConfig.apiBaseUrl.replaceFirst('http', 'ws');
+    final wsBase = AppConfig.baseUrl.replaceFirst('http', 'ws');
     _url = '$wsBase/realtime/ws/incidents/$incidentId?token=$token';
     _connect();
   }
@@ -52,7 +52,7 @@ class WebSocketService {
   /// Conecta al canal de notificaciones de un usuario.
   void connectToNotifications(int userId, String token) {
     _token = token;
-    final wsBase = AppConfig.apiBaseUrl.replaceFirst('http', 'ws');
+    final wsBase = AppConfig.baseUrl.replaceFirst('http', 'ws');
     _url = '$wsBase/realtime/ws/notifications/$userId?token=$token';
     _connect();
   }

@@ -111,7 +111,7 @@ class SyncManager {
 
     try {
       final payload = {
-        'items': pending.map((item) => {
+        'items': pending.map((item) {
           final json = item.toJson();
           json.remove('synced'); // No enviar flag interno
           return json;
@@ -119,7 +119,7 @@ class SyncManager {
       };
 
       final response = await http.post(
-        Uri.parse('${AppConfig.apiBaseUrl}/realtime/incidents/offline-sync'),
+        Uri.parse('${AppConfig.baseUrl}/realtime/incidents/offline-sync'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

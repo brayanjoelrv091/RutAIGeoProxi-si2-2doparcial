@@ -33,9 +33,10 @@ class _IncidentTimelineScreenState extends State<IncidentTimelineScreen> {
     setState(() { _loading = true; _error = null; });
 
     try {
+      final token = await Session.getToken();
       final response = await http.get(
-        Uri.parse('${AppConfig.apiBaseUrl}/realtime/incidents/${widget.incidentId}/timeline'),
-        headers: {'Authorization': 'Bearer ${Session.token ?? ''}'},
+        Uri.parse('${AppConfig.baseUrl}/realtime/incidents/${widget.incidentId}/timeline'),
+        headers: {'Authorization': 'Bearer ${token ?? ''}'},
       ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {

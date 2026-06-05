@@ -276,7 +276,7 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
     await OfflineQueue.enqueue(offlineItem);
     
     // Trigger auto-sync attempt
-    final token = Session.token;
+    final token = await Session.getToken();
     if (token != null) {
       SyncManager().startAutoSync(token);
     }
