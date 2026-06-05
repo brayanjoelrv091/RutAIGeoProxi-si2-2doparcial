@@ -23,16 +23,20 @@ class Backend {
   }
 
   static Future<String?> login(String email, String password) async {
-    final response = await http.post(
-      _uri('/auth/login'),
-      headers: await _headers(jsonBody: true, withAuth: false),
-      body: jsonEncode({'email': email, 'password': password}),
-    );
-    if (response.statusCode != 200) return response.body;
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final token = data['access_token'] as String?;
-    if (token != null) await Session.setToken(token);
-    return null;
+    try {
+      final response = await http.post(
+        _uri('/auth/login'),
+        headers: await _headers(jsonBody: true, withAuth: false),
+        body: jsonEncode({'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 60));
+      if (response.statusCode != 200) return response.body;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final token = data['access_token'] as String?;
+      if (token != null) await Session.setToken(token);
+      return null;
+    } catch (e) {
+      return 'Error de conexión. Revisa tu internet o intenta de nuevo (el servidor puede estar despertando).';
+    }
   }
 
   static Future<String?> register(
@@ -40,24 +44,28 @@ class Backend {
     String email,
     String password,
   ) async {
-    final response = await http.post(
-      _uri('/auth/register'),
-      headers: await _headers(jsonBody: true, withAuth: false),
-      body: jsonEncode({
-        'nombre': name,
-        'email': email,
-        'password': password,
-        'rol': 'cliente',
-      }),
-    );
-    if (response.statusCode == 201) return null;
     try {
-      final error = jsonDecode(response.body);
-      if (error is Map && error['detail'] != null) {
-        return error['detail'].toString();
-      }
-    } catch (_) {}
-    return 'Error ${response.statusCode}';
+      final response = await http.post(
+        _uri('/auth/register'),
+        headers: await _headers(jsonBody: true, withAuth: false),
+        body: jsonEncode({
+          'nombre': name,
+          'email': email,
+          'password': password,
+          'rol': 'cliente',
+        }),
+      ).timeout(const Duration(seconds: 60));
+      if (response.statusCode == 201) return null;
+      try {
+        final error = jsonDecode(response.body);
+        if (error is Map && error['detail'] != null) {
+          return error['detail'].toString();
+        }
+      } catch (_) {}
+      return 'Error ${response.statusCode}';
+    } catch (e) {
+      return 'Error de conexión. Revisa tu internet o intenta de nuevo.';
+    }
   }
 
   static Future<void> logout() async {

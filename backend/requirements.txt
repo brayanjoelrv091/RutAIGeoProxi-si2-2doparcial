@@ -21,7 +21,7 @@ psycopg2-binary>=2.9.0
 
 # ── Storage ──
 python-multipart>=0.0.10
-# firebase-admin>=6.5.0  # Opcional: solo si usas Firebase Storage (descomenta si es necesario)
+firebase-admin>=6.5.0
 
 # ── Reportes ──
 reportlab>=4.1.0
