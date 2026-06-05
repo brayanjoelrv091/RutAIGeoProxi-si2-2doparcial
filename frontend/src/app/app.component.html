@@ -33,19 +33,23 @@
         
         @if (showNotifications) {
           <div class="notifications-panel glass-card">
-            <div class="panel-header">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h4>Notificaciones</h4>
-              <button class="close-btn" (click)="toggleNotifications()">×</button>
+              <div>
+                <button class="clear-all-btn" (click)="deleteAllNotifications()" *ngIf="notifications.length > 0" style="margin-right: 10px; font-size: 12px; color: #ff6b6b; cursor: pointer; background: none; border: none;">🗑️ Borrar Todas</button>
+                <button class="close-btn" (click)="toggleNotifications()" style="cursor: pointer; background: none; border: none; color: white; font-size: 18px;">×</button>
+              </div>
             </div>
             <div class="panel-body">
               @if (notifications.length === 0) {
                 <p class="empty-msg">No hay notificaciones</p>
               } @else {
                 @for (n of notifications; track $index) {
-                  <div class="notification-item" [class.type-payment]="n.type === 'payment_approved'">
+                  <div class="notification-item" [class.type-payment]="n.type === 'payment_approved'" style="position: relative;">
+                    <button class="del-notif-btn" (click)="deleteNotification(n.id, $event)" style="position: absolute; top: 5px; right: 5px; color: #ff6b6b; cursor: pointer; background: none; border: none; font-size: 14px;">×</button>
                     <strong>{{ n.titulo || n.title }}</strong>
                     <p>{{ n.mensaje || n.message }}</p>
-                    <small>{{ n.timestamp | date:'shortTime' }}</small>
+                    <small>{{ n.timestamp || n.creado_at | date:'shortTime' }}</small>
                   </div>
                 }
               }

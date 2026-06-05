@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from './modules/p1_usuarios/auth.service';
 import { WebSocketService } from './modules/shared/websocket.service';
 
@@ -15,6 +16,10 @@ export class AppComponent implements OnInit {
   title = 'RutAIGeoProxi';
   private readonly auth = inject(AuthService);
   private readonly ws = inject(WebSocketService);
+  private readonly http = inject(HttpClient);
+  
+  // Use config to fallback if environment is missing
+  private apiUrl = 'https://rutai-backend.onrender.com';
   
   menuOpen = false;
   isDarkTheme = true;
@@ -26,8 +31,46 @@ export class AppComponent implements OnInit {
     this.isDarkTheme = localStorage.getItem('theme') !== 'light';
     this.applyTheme();
     if (this.isLoggedIn()) {
+      this.fetchNotifications();
       this.initNotifications();
     }
+  }
+
+  fetchNotifications() {
+    this.http.get<any[]>(`${this.apiUrl}/payments/notifications`, {
+      headers: { Authorization: `Bearer ${this.auth.token}` }
+    }).subscribe({
+      next: (data) => {
+        this.notifications = data;
+        this.unreadCount = data.filter(n => !n.leido).length;
+      },
+      error: (e) => console.error('Error fetching notifications', e)
+    });
+  }
+
+  deleteNotification(id: number, event: Event) {
+    event.stopPropagation();
+    this.http.delete(`${this.apiUrl}/payments/notifications/${id}`, {
+      headers: { Authorization: `Bearer ${this.auth.token}` }
+    }).subscribe({
+      next: () => {
+        this.notifications = this.notifications.filter(n => n.id !== id);
+      },
+      error: (e) => console.error('Error deleting notification', e)
+    });
+  }
+
+  deleteAllNotifications() {
+    if(!confirm('¿Estás seguro de borrar todas las notificaciones?')) return;
+    this.http.delete(`${this.apiUrl}/payments/notifications/all`, {
+      headers: { Authorization: `Bearer ${this.auth.token}` }
+    }).subscribe({
+      next: () => {
+        this.notifications = [];
+        this.unreadCount = 0;
+      },
+      error: (e) => console.error('Error deleting all notifications', e)
+    });
   }
 
   yangoModalActive = false;

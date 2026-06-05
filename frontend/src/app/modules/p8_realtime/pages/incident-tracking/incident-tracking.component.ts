@@ -1,7 +1,9 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { RealtimeService, WSMessage } from '../../realtime.service';
+
+import * as L from 'leaflet';
 
 /**
  * P8 · CU-26 — Componente de tracking GPS en vivo.
@@ -16,7 +18,7 @@ import { RealtimeService, WSMessage } from '../../realtime.service';
   templateUrl: './incident-tracking.component.html',
   styleUrls: ['./incident-tracking.component.css'],
 })
-export class IncidentTrackingComponent implements OnInit, OnDestroy {
+export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() incidentId!: number;
   @Input() token!: string;
 
@@ -26,6 +28,11 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy {
   positions: Array<{ lat: number; lng: number; role: string; timestamp: string }> = [];
   speed: number = 0;
   heading: number = 0;
+
+  // ── Mapa Leaflet ──
+  private map: L.Map | undefined;
+  private marker: L.Marker | undefined;
+  private pathLine: L.Polyline | undefined;
 
   private subs: Subscription[] = [];
 
@@ -51,6 +58,24 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    this.initMap();
+  }
+
+  private initMap(): void {
+    // Default to Santa Cruz, Bolivia
+    this.map = L.map('leaflet-map').setView([-17.7833, -63.1821], 13);
+    
+    // CartoDB Dark Matter para un look moderno
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(this.map);
+
+    this.pathLine = L.polyline([], { color: '#00F2FF', weight: 4 }).addTo(this.map);
+  }
+
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
     this.realtime.disconnect();
@@ -72,6 +97,29 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy {
     // Mantener últimos 200 puntos para rendimiento
     if (this.positions.length > 200) {
       this.positions = this.positions.slice(-200);
+    }
+
+    // Actualizar Mapa Leaflet
+    if (this.map && this.pathLine) {
+      const latLng = L.latLng(point.lat, point.lng);
+      
+      if (!this.marker) {
+        // Inicializar marcador
+        const iconHtml = `<div style="font-size: 24px; text-shadow: 0 0 10px #00F2FF;">${point.role === 'tecnico' ? '🔧' : '🚗'}</div>`;
+        const customIcon = L.divIcon({
+          html: iconHtml,
+          className: 'custom-leaflet-icon',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+        this.marker = L.marker(latLng, { icon: customIcon }).addTo(this.map);
+        this.map.setView(latLng, 16);
+      } else {
+        this.marker.setLatLng(latLng);
+        this.map.panTo(latLng);
+      }
+
+      this.pathLine.addLatLng(latLng);
     }
   }
 

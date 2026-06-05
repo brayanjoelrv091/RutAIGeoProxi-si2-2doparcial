@@ -51,6 +51,44 @@ def get_payment_history(
 
 # --- Rutas de Notificaciones ---
 
+@router.get("/notifications", response_model=List[NotificacionResponse])
+def get_my_notifications(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Obtener las notificaciones del usuario actual.
+    """
+    from app.modules.p5_pagos.models import Notificacion
+    return db.query(Notificacion).filter(Notificacion.usuario_id == current_user.id).order_by(Notificacion.creado_at.desc()).all()
+
+@router.delete("/notifications/all", status_code=status.HTTP_204_NO_CONTENT)
+def delete_all_notifications(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    from app.modules.p5_pagos.models import Notificacion
+    db.query(Notificacion).filter(Notificacion.usuario_id == current_user.id).delete()
+    db.commit()
+    return None
+
+@router.delete("/notifications/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_notification(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    from app.modules.p5_pagos.models import Notificacion
+    notif = db.query(Notificacion).filter(
+        Notificacion.id == notification_id,
+        Notificacion.usuario_id == current_user.id
+    ).first()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notificación no encontrada")
+    db.delete(notif)
+    db.commit()
+    return None
+
 @router.websocket("/ws/notifications/{user_id}")
 async def notifications_websocket(websocket: WebSocket, user_id: int):
     """
