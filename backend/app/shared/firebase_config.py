@@ -14,12 +14,19 @@ def init_firebase():
     """Inicializa el SDK de Firebase Admin"""
     if not firebase_admin._apps:
         try:
-            if os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
+            import json
+            env_cred = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+            if env_cred:
+                cred_dict = json.loads(env_cred)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                logger.info("🔥 Firebase Admin SDK inicializado desde variable de entorno.")
+            elif os.path.exists(SERVICE_ACCOUNT_KEY_PATH):
                 cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
                 firebase_admin.initialize_app(cred)
-                logger.info("🔥 Firebase Admin SDK inicializado correctamente.")
+                logger.info("🔥 Firebase Admin SDK inicializado desde archivo JSON.")
             else:
-                logger.error(f"❌ Error: No se encontró el archivo {SERVICE_ACCOUNT_KEY_PATH}")
+                logger.error(f"❌ Error: No se encontró credencial en env var ni en {SERVICE_ACCOUNT_KEY_PATH}")
         except Exception as e:
             logger.error(f"❌ Error al inicializar Firebase: {e}")
 
