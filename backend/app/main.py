@@ -180,6 +180,30 @@ app.include_router(analytics_router)
 
 
 # ── Root endpoint ──
+@app.get("/api/v1/wipe-database-danger-zona", tags=["Mantenimiento"])
+def wipe_database_danger_zona():
+    """Ruta temporal secreta para limpiar la base de datos en Render."""
+    from app.shared.database import engine, Base
+    from sqlalchemy import text
+    import logging
+    log = logging.getLogger(__name__)
+    
+    try:
+        log.warning("Iniciando borrado completo de la base de datos...")
+        with engine.connect() as conn:
+            conn.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"))
+            conn.commit()
+        log.info("Esquema public borrado y recreado.")
+        
+        # Volver a crear todas las tablas
+        Base.metadata.create_all(bind=engine)
+        log.info("Tablas recreadas exitosamente.")
+        
+        return {"status": "exito", "mensaje": "Base de datos borrada y recreada exitosamente con el nuevo esquema multitenant."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
+
 @app.get("/", tags=["Sistema"])
 def root():
     """Mapa de la API por ciclo y caso de uso."""
