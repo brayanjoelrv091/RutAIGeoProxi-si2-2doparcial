@@ -1,27 +1,88 @@
 """
-P7 — Rutas de Seguridad y Multi-Tenant (Ciclo 5 — Placeholder).
-
-Endpoints futuros:
-    POST   /tenants              → Crear tenant
-    GET    /tenants              → Listar tenants (superadmin)
-    PATCH  /tenants/{id}         → Actualizar tenant
-    POST   /tenants/{id}/members → Agregar miembro
+P7 — Rutas de Administración Multi-Tenant.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
-router = APIRouter(
-    prefix="/tenants",
-    tags=["P7 · Seguridad y Multi-Tenant (Ciclo 5)"],
+from app.shared.deps import get_current_user, get_db, require_roles
+from app.modules.p1_usuarios.models import Usuario
+from app.modules.p7_seguridad_multitenant.schemas import (
+    TenantCreate,
+    TenantUpdate,
+    TenantOut,
+    MembershipCreate,
+    MembershipOut
 )
+from app.modules.p7_seguridad_multitenant.services import TenantService
+
+router = APIRouter(prefix="/tenants", tags=["P7 · Seguridad Multi-Tenant"])
+
+admin_dep = require_roles("admin")
+
+@router.post("", response_model=TenantOut, status_code=status.HTTP_201_CREATED, summary="Crear un nuevo Tenant")
+def create_tenant(
+    schema: TenantCreate,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    """CU29 · Administrador global crea una nueva organización."""
+    return TenantService.create_tenant(db, schema)
 
 
-@router.get("/health", summary="Health check del módulo P7")
-def health():
-    """Verifica que el módulo P7 está registrado correctamente."""
-    return {
-        "modulo": "P7_Seguridad_Multitenant",
-        "estado": "placeholder",
-        "ciclo": 5,
-        "mensaje": "Módulo registrado — implementación pendiente Ciclo 5.",
-    }
+@router.get("", response_model=list[TenantOut], summary="Listar todos los Tenants")
+def list_tenants(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    return TenantService.get_tenants(db, skip, limit)
+
+
+@router.get("/{tenant_id}", response_model=TenantOut, summary="Ver detalle de Tenant")
+def get_tenant(
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(get_current_user),
+):
+    return TenantService.get_tenant_by_id(db, tenant_id)
+
+
+@router.patch("/{tenant_id}", response_model=TenantOut, summary="Actualizar Tenant")
+def update_tenant(
+    tenant_id: int,
+    schema: TenantUpdate,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    return TenantService.update_tenant(db, tenant_id, schema)
+
+
+@router.post("/{tenant_id}/members", response_model=MembershipOut, summary="Agregar miembro al Tenant")
+def add_member(
+    tenant_id: int,
+    schema: MembershipCreate,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    return TenantService.add_member(db, tenant_id, schema)
+
+
+@router.delete("/{tenant_id}/members/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Quitar miembro del Tenant")
+def remove_member(
+    tenant_id: int,
+    usuario_id: int,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    TenantService.remove_member(db, tenant_id, usuario_id)
+
+
+@router.get("/{tenant_id}/members", response_model=list[MembershipOut], summary="Listar miembros del Tenant")
+def list_members(
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(admin_dep),
+):
+    return TenantService.list_members(db, tenant_id)

@@ -143,13 +143,13 @@ def admin_create_user(
 @admin_router.get(
     "/users",
     response_model=list[UserOut],
-    summary="CU5 · Listar usuarios (admin)",
+    summary="CU5 · Listar todos los usuarios (admin)",
 )
-def admin_list_users(
+def list_users(
     db: Session = Depends(get_db),
-    _current: Usuario = Depends(admin_dep),
+    current: Usuario = Depends(require_roles("admin")),
 ):
-    return UserService.list_all(db)
+    return UserService.list_all(db, current.tenant_id)
 
 
 @admin_router.patch(

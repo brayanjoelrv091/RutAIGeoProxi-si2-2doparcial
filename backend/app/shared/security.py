@@ -12,22 +12,25 @@ import bcrypt
 
 from app.shared.config import settings
 
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # ── Contraseñas ────────────────────────────────────────────────────────
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifica una contraseña plana contra su hash usando passlib."""
+    """Verifica una contraseña plana contra su hash usando bcrypt."""
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        if isinstance(hashed_password, str):
+            hashed_password = hashed_password.encode('utf-8')
+        if isinstance(plain_password, str):
+            plain_password = plain_password.encode('utf-8')
+            
+        return bcrypt.checkpw(plain_password, hashed_password)
     except Exception:
         return False
 
-
 def get_password_hash(password: str) -> str:
-    """Genera un hash de bcrypt para una contraseña plana usando passlib."""
-    return pwd_context.hash(password)
+    """Genera un hash de bcrypt para una contraseña plana usando bcrypt."""
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password, salt).decode('utf-8')
 
 
 # ── Tokens de recuperación de contraseña ───────────────────────────────

@@ -181,3 +181,79 @@ class AssignmentService:
                 detail="Asignación no encontrada para este incidente",
             )
         return asignacion
+
+    @staticmethod
+    def list_nearby_workshops(db: Session, incident_id: int, max_radius_km: float = 50.0):
+        from app.modules.p3_talleres.models import Taller
+        incidente = db.query(Incidente).filter(Incidente.id == incident_id).first()
+        if not incidente:
+            raise HTTPException(status_code=404, detail="Incidente no encontrado")
+            
+        talleres = db.query(Taller).filter(Taller.esta_activo == True).all()
+        nearby = []
+        for t in talleres:
+            dist = haversine(incidente.latitud, incidente.longitud, t.latitud, t.longitud)
+            if dist <= max_radius_km:
+                nearby.append({
+                    "taller_id": t.id,
+                    "nombre": t.nombre,
+                    "direccion": t.direccion,
+                    "distancia_km": round(dist, 2),
+                    "calificacion_promedio": t.calificacion_promedio,
+                    "especialidades": t.especialidades
+                })
+                
+        # Ordenar por distancia (más cercano primero)
+        nearby.sort(key=lambda x: x["distancia_km"])
+        return nearby
+
+    @staticmethod
+    def manual_assign(db: Session, incident_id: int, taller_id: int, notas: str | None, background_tasks):
+        from app.modules.p3_talleres.models import Taller, SolicitudServicio
+        incidente = db.query(Incidente).filter(Incidente.id == incident_id).first()
+        if not incidente:
+            raise HTTPException(status_code=404, detail="Incidente no encontrado")
+            
+        if db.query(Asignacion).filter(Asignacion.incidente_id == incident_id).first():
+            raise HTTPException(status_code=400, detail="El incidente ya tiene una asignación")
+            
+        taller = db.query(Taller).filter(Taller.id == taller_id).first()
+        if not taller:
+            raise HTTPException(status_code=404, detail="Taller no encontrado")
+            
+        dist = haversine(incidente.latitud, incidente.longitud, taller.latitud, taller.longitud)
+        
+        asignacion = Asignacion(
+            incidente_id=incident_id,
+            taller_id=taller_id,
+            distancia_km=round(dist, 2),
+            puntaje=100.0, # Asignación manual
+            metodo="manual",
+            razonamiento="Asignado manualmente por el usuario."
+        )
+        db.add(asignacion)
+        
+        solicitud = SolicitudServicio(
+            incidente_id=incident_id,
+            taller_id=taller_id,
+            estado="pendiente",
+            notas=notas
+        )
+        db.add(solicitud)
+        
+        incidente.estado = "asignado"
+        db.commit()
+        db.refresh(asignacion)
+        
+        # Notificar
+        from app.modules.p5_pagos.services import NotificationService
+        if background_tasks:
+            background_tasks.add_task(
+                NotificationService.send_push_notification,
+                db=db,
+                user_id=taller.usuario_propietario_id,
+                titulo="Nueva asignación de incidente (Manual)",
+                mensaje=f"Se te ha asignado el incidente #{incident_id}."
+            )
+            
+        return asignacion

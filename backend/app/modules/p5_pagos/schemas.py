@@ -14,7 +14,9 @@ class PagoCreate(PagoBase):
 class PagoResponse(PagoBase):
     id: int
     estado: str
+    proveedor: str
     transaccion_id: Optional[str]
+    gateway_response: Optional[str]
     creado_at: datetime
 
     model_config = {"from_attributes": True}

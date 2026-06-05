@@ -81,9 +81,9 @@ def list_my_incidents(
 )
 def list_all_incidents(
     db: Session = Depends(get_db),
-    _current: Usuario = Depends(require_roles("admin")),
+    current: Usuario = Depends(require_roles("admin")),
 ):
-    return IncidentService.list_all(db)
+    return IncidentService.list_all(db, current.tenant_id)
 
 
 @router.get(

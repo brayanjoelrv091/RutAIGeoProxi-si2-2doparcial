@@ -16,6 +16,8 @@ from app.modules.p4_asignacion.schemas import (
     AssignmentOut,
     AutoAssignResponse,
     CandidateOut,
+    NearbyWorkshopOut,
+    ManualAssignRequest
 )
 from app.modules.p4_asignacion.services import AssignmentService
 from app.shared.websocket_manager import manager
@@ -98,3 +100,32 @@ async def track_incident(websocket: WebSocket, incident_id: int):
             )
     except WebSocketDisconnect:
         manager.disconnect(websocket, str(incident_id))
+
+@router.get(
+    "/workshops/nearby/{incident_id}",
+    response_model=list[NearbyWorkshopOut],
+    summary="CU31 · Listar talleres cercanos al incidente"
+)
+def list_nearby_workshops(
+    incident_id: int,
+    max_radius_km: float = Query(default=50.0, ge=1, le=500),
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(get_current_user),
+):
+    return AssignmentService.list_nearby_workshops(db, incident_id, max_radius_km)
+
+
+@router.post(
+    "/manual/{incident_id}",
+    response_model=AssignmentOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="CU31 · Asignación manual de taller"
+)
+def manual_assign(
+    incident_id: int,
+    request: ManualAssignRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    _current: Usuario = Depends(get_current_user),
+):
+    return AssignmentService.manual_assign(db, incident_id, request.taller_id, request.notas, background_tasks)

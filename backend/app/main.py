@@ -10,9 +10,9 @@ Arquitectura:
     P4 · Asignación y Logística          (CU14-CU15)  ✅ Implementado
     P5 · Pagos y Notificaciones          (CU16-CU18)  ✅ Implementado
     P6 · Reportes                        (CU19-CU20)  ✅ Implementado
-    P7 · Seguridad y Multi-Tenant        (Ciclo 5)    🔲 Placeholder
+    P7 · Seguridad y Multi-Tenant        (Ciclo 5)    ✅ Implementado
     P8 · Conectividad Resiliente y RT    (CU21-CU26)  ✅ Implementado (Ciclo 4)
-    P9 · Analítica Operacional           (Ciclo 5)    🔲 Placeholder
+    P9 · Analítica Operacional           (Ciclo 5)    ✅ Implementado
 """
 
 import logging
@@ -47,12 +47,12 @@ from app.modules.p4_asignacion.models import Asignacion  # noqa: F401
 from app.modules.p5_pagos.models import Pago, Notificacion  # noqa: F401
 from app.modules.p6_reportes.models import ReporteGenerado  # noqa: F401
 from app.modules.p6_auditoria.models import Bitacora  # noqa: F401
-# P7 — Placeholder (Ciclo 5)
-# from app.modules.p7_seguridad_multitenant.models import ...  # noqa: F401
+# P7 — Seguridad Multi-Tenant (Ciclo 5)
+from app.modules.p7_seguridad_multitenant.models import Tenant, TenantMembership  # noqa: F401
 # P8 — Conectividad Resiliente y Tiempo Real (Ciclo 4)
 from app.modules.p8_realtime.models import EventoEstado, TrackingGPS  # noqa: F401
-# P9 — Placeholder (Ciclo 5)
-# from app.modules.p9_analitica.models import ...  # noqa: F401
+# P9 — Analítica y Operaciones (Ciclo 5)
+from app.modules.p9_analitica.models import KPISnapshot, Cotizacion, CotizacionItem  # noqa: F401
 
 # ── Importar routers de módulos ──
 from app.modules.p1_usuarios.routes import admin_router, auth_router, profile_router
@@ -171,11 +171,11 @@ app.include_router(payments_router)
 # P6: Reportes y Auditoría
 app.include_router(reports_router)
 app.include_router(audit_router)
-# P7: Seguridad y Multi-Tenant (Ciclo 5 — Placeholder)
+# P7: Seguridad y Multi-Tenant (Ciclo 5)
 app.include_router(tenant_router)
 # P8: Conectividad Resiliente y Tiempo Real (Ciclo 4)
 app.include_router(realtime_router)
-# P9: Analítica Operacional (Ciclo 5 — Placeholder)
+# P9: Analítica Operacional (Ciclo 5)
 app.include_router(analytics_router)
 
 
@@ -226,8 +226,8 @@ def root():
                 "CU20_exportar_pdf_excel": "GET /reports/incidents/pdf | excel",
             },
             "P7_seguridad_multitenant": {
-                "estado": "🔲 Placeholder (Ciclo 5)",
-                "health": "GET /tenants/health",
+                "estado": "✅ Implementado (Ciclo 5)",
+                "CU28_CU29_tenants": "GET/POST/PATCH /tenants",
             },
             "P8_conectividad_realtime": {
                 "estado": "✅ Implementado (Ciclo 4)",
@@ -239,8 +239,10 @@ def root():
                 "CU26_tracking_gps": "GET /realtime/incidents/{id}/tracking + WS location_update",
             },
             "P9_analitica_operacional": {
-                "estado": "🔲 Placeholder (Ciclo 5)",
-                "health": "GET /analytics/health",
+                "estado": "✅ Implementado (Ciclo 5)",
+                "CU27_dashboard": "GET /analytics/dashboard",
+                "CU30_cotizacion": "POST /analytics/quotations/{incident_id}",
+                "CU32_estimacion": "GET /analytics/estimate/{incident_id}",
             },
         },
         "docs": "/docs",

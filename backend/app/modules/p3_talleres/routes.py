@@ -65,12 +65,18 @@ def list_my_workshops(
 
 
 @router.get(
-    "/all",
+    "/active",
     response_model=list[WorkshopOut],
     summary="Listar todos los talleres activos",
 )
-def list_all_workshops(db: Session = Depends(get_db)):
-    return WorkshopService.list_all_active(db)
+def list_active_workshops(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    return WorkshopService.list_all_active(db, current.tenant_id)
+
+
+
 
 
 @router.get(

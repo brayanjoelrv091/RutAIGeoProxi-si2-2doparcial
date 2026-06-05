@@ -43,3 +43,15 @@ class AutoAssignResponse(BaseModel):
     asignacion: AssignmentOut
     candidatos_evaluados: list[CandidateOut] = []
     message: str
+
+class NearbyWorkshopOut(BaseModel):
+    taller_id: int
+    nombre: str
+    direccion: str
+    distancia_km: float
+    calificacion_promedio: float
+    especialidades: list[str] | None
+
+class ManualAssignRequest(BaseModel):
+    taller_id: int
+    notas: str | None = None

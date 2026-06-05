@@ -64,9 +64,19 @@ class PaymentService:
                 detail="Este incidente ya tiene un pago completado",
             )
 
-        transaccion_id = f"TXN-{uuid.uuid4().hex[:8].upper()}"
         monto_total = pago_in.monto
         comision = monto_total * 0.10
+
+        from app.modules.p5_pagos.stripe_gateway import StripeGateway
+        gateway_result = StripeGateway.process_payment(amount=monto_total, currency=pago_in.moneda)
+        
+        if not gateway_result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error en pasarela de pago: {gateway_result['raw_response']}"
+            )
+            
+        transaccion_id = gateway_result["transaction_id"] or f"TXN-{uuid.uuid4().hex[:8].upper()}"
 
         nuevo_pago = Pago(
             incidente_id=pago_in.incidente_id,
@@ -75,7 +85,9 @@ class PaymentService:
             moneda=pago_in.moneda,
             metodo_pago=pago_in.metodo_pago,
             estado="completado",
+            proveedor="stripe",
             transaccion_id=transaccion_id,
+            gateway_response=gateway_result["raw_response"]
         )
         db.add(nuevo_pago)
 

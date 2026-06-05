@@ -264,9 +264,13 @@ class UserService:
         return user
 
     @staticmethod
-    def list_all(db: Session) -> list[Usuario]:
-        """CU5 — Listar todos los usuarios (admin)."""
-        return db.query(Usuario).order_by(Usuario.id).all()
+    def list_all(db: Session, tenant_id: int | None = None) -> list[Usuario]:
+        """CU5 — Listar todos los usuarios (admin), filtrado por tenant si aplica."""
+        from app.modules.p7_seguridad_multitenant.services import TenantFilterService
+        query = db.query(Usuario)
+        if tenant_id is not None:
+            query = TenantFilterService.apply_tenant_filter(query, Usuario, tenant_id)
+        return query.order_by(Usuario.id).all()
 
     @staticmethod
     def admin_create(db: Session, payload: AdminUserCreate) -> Usuario:

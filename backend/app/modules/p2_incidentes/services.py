@@ -39,9 +39,15 @@ class IncidentService:
         CU7 — Reportar incidente con fotos, audio y ubicación GPS.
         Ejecuta clasificación automática (CU8) tras la creación.
         """
+        # Obtener tenant_id del usuario
+        from app.modules.p1_usuarios.models import Usuario
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        tenant_id = user.tenant_id if user else None
+
         # 1. Crear incidente
         incidente = Incidente(
             usuario_id=user_id,
+            tenant_id=tenant_id,
             titulo=payload.titulo,
             descripcion=payload.descripcion,
             latitud=payload.latitud,
@@ -225,9 +231,13 @@ class IncidentService:
         )
 
     @staticmethod
-    def list_all(db: Session) -> list[Incidente]:
-        """Listar todos los incidentes (admin)."""
-        return db.query(Incidente).order_by(Incidente.creado_en.desc()).all()
+    def list_all(db: Session, tenant_id: int | None = None) -> list[Incidente]:
+        """Listar todos los incidentes (admin), filtrados por tenant si aplica."""
+        from app.modules.p7_seguridad_multitenant.services import TenantFilterService
+        query = db.query(Incidente)
+        if tenant_id is not None:
+            query = TenantFilterService.apply_tenant_filter(query, Incidente, tenant_id)
+        return query.order_by(Incidente.creado_en.desc()).all()
 
     @staticmethod
     async def reclassify(db: Session, incident_id: int) -> ClasificacionIncidente:

@@ -81,6 +81,10 @@ class Settings:
     SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD") or None
     FROM_EMAIL: str = os.getenv("FROM_EMAIL", "no-reply@rutaigeoproxi.com")
 
+    # ── Stripe (Pagos) ─────────────────────────────────────────────────
+    STRIPE_PUBLIC_KEY: str | None = os.getenv("STRIPE_PUBLIC_KEY")
+    STRIPE_SECRET_KEY: str | None = os.getenv("STRIPE_SECRET_KEY")
+
     @property
     def firebase_enabled(self) -> bool:
         return bool(self.FIREBASE_CREDENTIALS_PATH and self.FIREBASE_STORAGE_BUCKET)

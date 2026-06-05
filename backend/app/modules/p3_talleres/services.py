@@ -23,8 +23,14 @@ class WorkshopService:
     @staticmethod
     def register(db: Session, user_id: int, payload: WorkshopCreate) -> Taller:
         """CU10 — Registrar un nuevo taller."""
+        # Obtener tenant_id del usuario propietario
+        from app.modules.p1_usuarios.models import Usuario
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        tenant_id = user.tenant_id if user else None
+
         taller = Taller(
             usuario_propietario_id=user_id,
+            tenant_id=tenant_id,
             nombre=payload.nombre,
             direccion=payload.direccion,
             latitud=payload.latitud,
@@ -58,13 +64,12 @@ class WorkshopService:
         )
 
     @staticmethod
-    def list_all_active(db: Session) -> list[Taller]:
-        return (
-            db.query(Taller)
-            .filter(Taller.esta_activo.is_(True))
-            .order_by(Taller.nombre)
-            .all()
-        )
+    def list_all_active(db: Session, tenant_id: int | None = None) -> list[Taller]:
+        from app.modules.p7_seguridad_multitenant.services import TenantFilterService
+        query = db.query(Taller).filter(Taller.esta_activo.is_(True))
+        if tenant_id is not None:
+            query = TenantFilterService.apply_tenant_filter(query, Taller, tenant_id)
+        return query.order_by(Taller.nombre).all()
 
     # ── CU10: Registrar técnicos ───────────────────────────────────
 

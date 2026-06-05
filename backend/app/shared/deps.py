@@ -87,3 +87,24 @@ def require_roles(*roles: str):
         return user
 
     return _dep
+
+
+# ── Guard por Tenant ────────────────────────────────────────────────
+def get_current_tenant_id(user=Depends(get_current_user)) -> int | None:
+    """Extrae el tenant_id del usuario actual. Si es None, es un superadmin sin org."""
+    return user.tenant_id
+
+def require_tenant_access(target_tenant_id: int):
+    """Valida que el usuario pertenezca al tenant al que intenta acceder o sea superadmin."""
+    def _dep(user=Depends(get_current_user)):
+        if user.rol == "admin" and user.tenant_id is None:
+            return user  # Superadmin global
+            
+        if user.tenant_id != target_tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No perteneces a esta organización",
+            )
+        return user
+    return _dep
+

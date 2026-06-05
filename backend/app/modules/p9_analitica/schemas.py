@@ -1,5 +1,69 @@
 """
-P9 — Schemas de Analítica Operacional (Ciclo 5 — Placeholder).
+P9 — Schemas Pydantic para Analítica y Cotizaciones.
 """
 
-# Los schemas se implementarán en el Ciclo 5.
+from datetime import datetime
+from pydantic import BaseModel, Field
+
+# ── Analítica ──
+
+class KPIMetric(BaseModel):
+    label: str
+    value: float | int | str
+    tendencia: str | None = None  # up | down | neutral
+
+class DashboardKPIs(BaseModel):
+    tenant_id: int | None
+    total_incidentes: int
+    completados: int
+    cancelados: int
+    tiempo_promedio_asignacion_min: float
+    tiempo_promedio_resolucion_min: float
+    incidentes_por_categoria: dict[str, int]
+    incidentes_por_severidad: dict[str, int]
+
+# ── Estimación de Tiempo (CU-32) ──
+class TiempoEstimadoOut(BaseModel):
+    incidente_id: int
+    tiempo_estimado_dias: int
+    rango_dias: str
+    razonamiento: str
+
+# ── Cotizaciones (CU-30) ──
+
+class CotizacionItemBase(BaseModel):
+    descripcion: str
+    cantidad: int = Field(ge=1)
+    precio_unitario: float = Field(ge=0.0)
+
+class CotizacionItemCreate(CotizacionItemBase):
+    pass
+
+class CotizacionItemOut(CotizacionItemBase):
+    id: int
+    
+    model_config = {"from_attributes": True}
+
+class CotizacionCreate(BaseModel):
+    incidente_id: int
+    notas: str | None = None
+
+class CotizacionUpdate(BaseModel):
+    estado: str  # borrador | enviada | aceptada | rechazada
+    notas: str | None = None
+
+class CotizacionOut(BaseModel):
+    id: int
+    incidente_id: int
+    tenant_id: int | None
+    subtotal: float
+    iva: float
+    total: float
+    estado: str
+    notas: str | None
+    tiempo_estimado_dias: int | None
+    creado_en: datetime
+    actualizado_en: datetime | None
+    items: list[CotizacionItemOut]
+
+    model_config = {"from_attributes": True}

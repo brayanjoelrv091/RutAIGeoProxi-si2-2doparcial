@@ -34,7 +34,9 @@ class Pago(Base):
     moneda = Column(String(10), default="USD")
     estado = Column(String(30), default="pendiente")  # pendiente | completado | fallido
     metodo_pago = Column(String(50))  # tarjeta | transferencia | efectivo
-    transaccion_id = Column(String(100), unique=True)  # ID externo simulado
+    proveedor = Column(String(50), default="stripe")
+    transaccion_id = Column(String(100), unique=True)  # ID externo simulado o real
+    gateway_response = Column(Text, nullable=True) # JSON raw de la respuesta del proveedor
     creado_at = Column(DateTime, default=_utc_now)
 
 

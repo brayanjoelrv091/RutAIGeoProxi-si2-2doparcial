@@ -31,6 +31,12 @@ class Taller(Base):
     __tablename__ = "talleres"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     usuario_propietario_id = Column(
         Integer,
         ForeignKey("usuarios.id", ondelete="CASCADE"),
