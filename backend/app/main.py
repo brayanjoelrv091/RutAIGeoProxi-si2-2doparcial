@@ -205,6 +205,7 @@ def wipe_database_danger_zona():
         return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
 
 @app.get("/", tags=["Sistema"])
+@app.head("/", tags=["Sistema"])
 def root():
     """Mapa de la API por ciclo y caso de uso."""
     return {
