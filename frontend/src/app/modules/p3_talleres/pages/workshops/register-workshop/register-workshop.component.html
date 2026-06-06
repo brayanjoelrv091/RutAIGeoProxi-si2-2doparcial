@@ -63,11 +63,20 @@
       </form>
 
       <!-- Columna Derecha: Mapa -->
-      <div class="map-panel glass-card">
+      <div class="map-panel glass-card" style="position: relative;">
         <div class="map-header">
           <h3>Mapa de la Red</h3>
           <p>Los marcadores verdes son otros talleres en RutAIGeoProxi.</p>
         </div>
+        
+        <!-- Buscador Flotante -->
+        <div class="map-search-bar">
+          <input type="text" [(ngModel)]="searchQuery" [ngModelOptions]="{standalone: true}" placeholder="Buscar calle, avenida..." (keyup.enter)="searchAddress()" />
+          <button type="button" (click)="searchAddress()" [disabled]="isSearching">
+            {{ isSearching ? '⏳' : '🔍' }}
+          </button>
+        </div>
+
         <div id="workshop-map" class="leaflet-map-container"></div>
       </div>
     </div>

@@ -1,20 +1,24 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { WorkshopService, Technician, Workshop } from '../../../workshop.service';
+import { AuthService } from '../../../../p1_usuarios/auth.service';
 import * as L from 'leaflet';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-register-workshop',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
   templateUrl: './register-workshop.component.html',
   styleUrl: './register-workshop.component.css',
 })
 export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly wsSvc = inject(WorkshopService);
+  private readonly authSvc = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   public readonly router = inject(Router);
 
@@ -40,6 +44,10 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
   success = '';
   locLoading = false;
   checkingProfile = true;
+
+  // -- Map Search --
+  searchQuery = '';
+  isSearching = false;
 
   // -- Map State --
   private map: L.Map | undefined;
@@ -83,6 +91,31 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
         error: (e) => console.error('Error loading other workshops', e)
       })
     );
+  }
+
+  searchAddress() {
+    if (!this.searchQuery.trim() || !this.map) return;
+    this.isSearching = true;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.searchQuery)}`;
+    this.http.get<any[]>(url).subscribe({
+      next: (res) => {
+        this.isSearching = false;
+        if (res && res.length > 0) {
+          const lat = parseFloat(res[0].lat);
+          const lon = parseFloat(res[0].lon);
+          this.map!.flyTo([lat, lon], 16);
+          this.updateMyMarker(lat, lon);
+        } else {
+          this.error = 'No se encontró la dirección.';
+          setTimeout(() => this.error = '', 3000);
+        }
+      },
+      error: () => {
+        this.isSearching = false;
+        this.error = 'Error buscando dirección.';
+        setTimeout(() => this.error = '', 3000);
+      }
+    });
   }
 
   private initMap(): void {
@@ -185,7 +218,18 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
     this.wsSvc.getMyProfile().subscribe({
       next: (profile) => {
         if (profile) {
+          const role = this.authSvc.currentUser()?.rol;
           if ((profile as any).estado_registro === 'completado') {
+            if (role === 'admin') {
+               // Admin can create multiple workshops, so we don't redirect them
+               this.checkingProfile = false;
+               setTimeout(() => {
+                 if (!this.createdWorkshopId && document.getElementById('workshop-map') && !this.map) {
+                   this.initMap();
+                 }
+               }, 100);
+               return;
+            }
             this.router.navigate(['/workshops/profile']);
             return;
           } else {

@@ -24,17 +24,18 @@ class WorkshopService:
     @staticmethod
     def register(db: Session, user_id: int, payload: WorkshopCreate) -> Taller:
         """CU10 — Registrar un nuevo taller."""
-        # Verificar si ya tiene taller
-        existing = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El usuario ya tiene un taller registrado",
-            )
-
-        # Obtener tenant_id del usuario propietario
         from app.modules.p1_usuarios.models import Usuario
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        
+        # Solo bloquear a los de rol 'taller' si ya tienen uno. Admins pueden tener múltiples.
+        if user and user.rol != "admin":
+            existing = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El usuario ya tiene un taller registrado",
+                )
+
         tenant_id = user.tenant_id if user else None
 
         taller = Taller(
