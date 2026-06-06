@@ -14,7 +14,7 @@ Endpoints:
     GET    /workshops/{id}/history         → CU13 Historial
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.shared.deps import get_current_user, get_db, require_roles

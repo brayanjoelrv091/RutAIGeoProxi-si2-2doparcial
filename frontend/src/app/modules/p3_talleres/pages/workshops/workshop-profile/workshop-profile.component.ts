@@ -40,7 +40,7 @@ export class WorkshopProfileComponent implements OnInit, OnDestroy {
           this.startHeartbeat();
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         if (err.status === 404) {
           // No tiene taller registrado, mandarlo al wizard
           this.router.navigate(['/workshops/register']);
@@ -59,20 +59,20 @@ export class WorkshopProfileComponent implements OnInit, OnDestroy {
     // Luego cada 60 segundos
     this.heartbeatInterval = setInterval(() => {
       this.wsSvc.heartbeat().subscribe({
-        error: (e) => console.error('Heartbeat failed', e)
+        error: (e: any) => console.error('Heartbeat failed', e)
       });
     }, 60000);
   }
 
   toggleAvailability(techId: number, currentStatus: boolean) {
     this.wsSvc.toggleAvailability(techId, !currentStatus).subscribe({
-      next: (updatedTech) => {
+      next: (updatedTech: Technician) => {
         if (this.workshop) {
-          const t = this.workshop.tecnicos.find(x => x.id === techId);
+          const t = this.workshop.tecnicos.find((x: Technician) => x.id === techId);
           if (t) t.esta_disponible = updatedTech.esta_disponible;
         }
       },
-      error: (e) => console.error('Error toggling availability', e)
+      error: (e: any) => console.error('Error toggling availability', e)
     });
   }
 

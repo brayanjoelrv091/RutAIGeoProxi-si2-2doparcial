@@ -21,6 +21,16 @@ with engine.connect() as conn:
         print("Añadido taller_preferido_id a incidentes")
     except Exception as e:
         print(e)
+    try:
+        conn.execute(text('ALTER TABLE talleres ADD COLUMN estado_registro VARCHAR(30) DEFAULT \'pendiente_tecnicos\' NOT NULL;'))
+        print("Añadido estado_registro a talleres")
+    except Exception as e:
+        print(e)
+    try:
+        conn.execute(text('ALTER TABLE talleres ADD COLUMN ultimo_heartbeat TIMESTAMP WITH TIME ZONE;'))
+        print("Añadido ultimo_heartbeat a talleres")
+    except Exception as e:
+        print(e)
     conn.commit()
 
 print("Creando nuevas tablas (usuarios_talleres_favoritos)...")
