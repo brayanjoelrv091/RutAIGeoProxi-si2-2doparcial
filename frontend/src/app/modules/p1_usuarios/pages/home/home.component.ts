@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
+import { WorkshopService } from '../../../p3_talleres/workshop.service';
 
 @Component({
   selector: 'app-home',
@@ -14,8 +15,10 @@ import { NgClass } from '@angular/common';
 export class HomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly wsSvc = inject(WorkshopService);
 
   me: Me | null = null;
+  workshopProfile: any = null;
   loadError = '';
   vehicleError = '';
 
@@ -48,7 +51,15 @@ export class HomeComponent implements OnInit {
   refresh(): void {
     this.loadError = '';
     this.auth.me().subscribe({
-      next: (m) => (this.me = m),
+      next: (m) => {
+        this.me = m;
+        if (this.isTaller) {
+          this.wsSvc.getMyProfile().subscribe({
+            next: (profile: any) => this.workshopProfile = profile,
+            error: () => {} // If 404, hasn't registered a workshop yet
+          });
+        }
+      },
       error: () => (this.loadError = 'No se pudo cargar el perfil.'),
     });
   }

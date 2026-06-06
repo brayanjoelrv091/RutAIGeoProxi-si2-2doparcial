@@ -35,9 +35,27 @@
         <section class="glass-card profile-section">
           <h2 class="tech-font">Tu Perfil</h2>
           <div class="profile-info">
-            <p><span>Nombre:</span> {{ me.nombre }}</p>
-            <p><span>Correo:</span> {{ me.email }}</p>
-            <p><span>Rol:</span> <span class="badge">{{ me.rol }}</span></p>
+            @if (isTaller && workshopProfile) {
+              <p><span>Taller:</span> {{ workshopProfile.nombre }}</p>
+              <p><span>Correo:</span> {{ workshopProfile.email || me.email }}</p>
+              <p><span>Rol:</span> <span class="badge">TALLER</span></p>
+              <p style="margin-top: 1rem;">
+                <span>Mecánicos Registrados:</span> {{ workshopProfile.tecnicos.length }}
+              </p>
+              @if (workshopProfile.tecnicos.length > 0) {
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                  @for (tech of workshopProfile.tecnicos; track tech.id) {
+                    <span style="background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; color: #fff;">
+                      👷 {{ tech.nombre }}
+                    </span>
+                  }
+                </div>
+              }
+            } @else {
+              <p><span>Nombre:</span> {{ me.nombre }}</p>
+              <p><span>Correo:</span> {{ me.email }}</p>
+              <p><span>Rol:</span> <span class="badge">{{ me.rol | uppercase }}</span></p>
+            }
           </div>
 
           <!-- Accesos rápidos por rol -->

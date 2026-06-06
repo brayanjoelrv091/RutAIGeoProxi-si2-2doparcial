@@ -41,21 +41,6 @@ class WorkshopOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class WorkshopProfileOut(WorkshopOut):
-    tecnicos: list["TechnicianOut"] = []
-    
-    model_config = {"from_attributes": True}
-
-
-class WorkshopUpdate(BaseModel):
-    nombre: str | None = Field(None, min_length=2, max_length=200)
-    direccion: str | None = Field(None, min_length=5, max_length=500)
-    telefono: str | None = Field(None, max_length=50)
-    email: EmailStr | None = None
-    especialidades: list[str] | None = None
-
-
-
 # ═══════════════════════════════════════════════════════════════════════
 # TÉCNICO  (CU10)
 # ═══════════════════════════════════════════════════════════════════════
@@ -83,6 +68,19 @@ class TechnicianOut(BaseModel):
 
 class TechnicianAvailabilityUpdate(BaseModel):
     esta_disponible: bool
+
+class WorkshopProfileOut(WorkshopOut):
+    tecnicos: list[TechnicianOut] = []
+    
+    model_config = {"from_attributes": True}
+
+
+class WorkshopUpdate(BaseModel):
+    nombre: str | None = Field(None, min_length=2, max_length=200)
+    direccion: str | None = Field(None, min_length=5, max_length=500)
+    telefono: str | None = Field(None, max_length=50)
+    email: EmailStr | None = None
+    especialidades: list[str] | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════
