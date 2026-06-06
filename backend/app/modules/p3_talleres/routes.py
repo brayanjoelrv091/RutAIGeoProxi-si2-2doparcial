@@ -65,6 +65,11 @@ def list_my_workshops(
 
 
 @router.get(
+    "/all",
+    response_model=list[WorkshopOut],
+    summary="Listar todos los talleres",
+)
+@router.get(
     "/active",
     response_model=list[WorkshopOut],
     summary="Listar todos los talleres activos",
