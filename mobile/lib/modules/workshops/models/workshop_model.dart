@@ -52,6 +52,39 @@ class Workshop {
       );
 }
 
+class Technician {
+  final int id;
+  final int tallerId;
+  final String nombre;
+  final String? telefono;
+  final String? especialidad;
+  final bool estaDisponible;
+  final double? latitud;
+  final double? longitud;
+
+  const Technician({
+    required this.id,
+    required this.tallerId,
+    required this.nombre,
+    this.telefono,
+    this.especialidad,
+    required this.estaDisponible,
+    this.latitud,
+    this.longitud,
+  });
+
+  factory Technician.fromJson(Map<String, dynamic> j) => Technician(
+        id: j['id'] as int,
+        tallerId: j['taller_id'] as int,
+        nombre: j['nombre'] as String,
+        telefono: j['telefono'] as String?,
+        especialidad: j['especialidad'] as String?,
+        estaDisponible: j['esta_disponible'] as bool,
+        latitud: j['latitud'] != null ? (j['latitud'] as num).toDouble() : null,
+        longitud: j['longitud'] != null ? (j['longitud'] as num).toDouble() : null,
+      );
+}
+
 class ServiceRequest {
   final int id;
   final int incidenteId;

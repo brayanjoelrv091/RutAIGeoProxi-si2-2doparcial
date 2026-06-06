@@ -170,8 +170,8 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> with SingleTick
           final w = list[i];
           return _WorkshopCard(
             workshop: w,
-            isFavorite: _favoriteIds.contains(w.id),
-            onToggleFavorite: () => _toggleFavorite(w.id),
+            isFavorite: _favoriteWorkshops.any((fav) => fav.id == w.id),
+            onToggleFavorite: () => _toggleFavorite(w),
             onHistory: () => Navigator.push(
               context,
               MaterialPageRoute(
