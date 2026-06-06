@@ -1,8 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { WorkshopService, Technician } from '../../../workshop.service';
+import { WorkshopService, Technician, Workshop } from '../../../workshop.service';
+import * as L from 'leaflet';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-register-workshop',
@@ -11,7 +13,7 @@ import { WorkshopService, Technician } from '../../../workshop.service';
   templateUrl: './register-workshop.component.html',
   styleUrl: './register-workshop.component.css',
 })
-export class RegisterWorkshopComponent implements OnInit {
+export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly wsSvc = inject(WorkshopService);
   private readonly fb = inject(FormBuilder);
   public readonly router = inject(Router);
@@ -39,8 +41,117 @@ export class RegisterWorkshopComponent implements OnInit {
   locLoading = false;
   checkingProfile = true;
 
+  // -- Map State --
+  private map: L.Map | undefined;
+  private myMarker: L.Marker | undefined;
+  private subs: Subscription[] = [];
+  otherWorkshops: Workshop[] = [];
+
   ngOnInit() {
     this.checkExistingProfile();
+    this.loadOtherWorkshops();
+  }
+
+  ngAfterViewInit(): void {
+    // Timeout needed to wait for ngIf to render the map container if it's conditional
+    setTimeout(() => {
+      if (!this.createdWorkshopId && !this.checkingProfile) {
+        this.initMap();
+      }
+    }, 100);
+  }
+
+  ngOnDestroy(): void {
+    this.subs.forEach(s => s.unsubscribe());
+    if (this.map) {
+      this.map.remove();
+    }
+  }
+
+  loadOtherWorkshops() {
+    this.subs.push(
+      this.wsSvc.listAllWorkshops().subscribe({
+        next: (ws) => {
+          this.otherWorkshops = ws;
+          this.plotOtherWorkshops();
+        },
+        error: (e) => console.error('Error loading other workshops', e)
+      })
+    );
+  }
+
+  private initMap(): void {
+    const mapContainer = document.getElementById('workshop-map');
+    if (!mapContainer) return;
+
+    // Default to a central coordinate (e.g. Santa Cruz, Bolivia)
+    this.map = L.map('workshop-map').setView([-17.7833, -63.1821], 13);
+    
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(this.map);
+
+    // Plot existing workshops if already loaded
+    this.plotOtherWorkshops();
+
+    // Map Click Listener
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      this.updateMyMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Listen to Workshop Name changes to update marker tooltip
+    this.subs.push(
+      this.workshopForm.get('nombre')!.valueChanges.subscribe(name => {
+        if (this.myMarker) {
+          const content = `<div style="text-align:center;font-weight:bold;color:#00F2FF;">${name || 'Mi Taller'}</div>`;
+          this.myMarker.setPopupContent(content);
+        }
+      })
+    );
+  }
+
+  private plotOtherWorkshops() {
+    if (!this.map || this.otherWorkshops.length === 0) return;
+    
+    this.otherWorkshops.forEach(ws => {
+      const iconHtml = `<div style="font-size: 20px; text-shadow: 0 0 5px #00C853; opacity: 0.7;">🏪</div>`;
+      const customIcon = L.divIcon({
+        html: iconHtml,
+        className: 'other-workshop-icon',
+        iconSize: [25, 25],
+        iconAnchor: [12, 12]
+      });
+      const marker = L.marker([ws.latitud, ws.longitud], { icon: customIcon }).addTo(this.map!);
+      marker.bindPopup(`<div style="color:#00C853;font-weight:bold;text-align:center;">${ws.nombre}</div><div style="font-size:0.8rem;text-align:center;">Taller en la red</div>`);
+    });
+  }
+
+  private updateMyMarker(lat: number, lng: number) {
+    this.workshopForm.patchValue({ latitud: lat, longitud: lng });
+    
+    if (!this.map) return;
+    const latLng = L.latLng(lat, lng);
+    
+    if (!this.myMarker) {
+      const iconHtml = `<div style="font-size: 30px; text-shadow: 0 0 15px #00F2FF; animation: pulse 2s infinite;">🔧</div>`;
+      const customIcon = L.divIcon({
+        html: iconHtml,
+        className: 'my-workshop-icon',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+      this.myMarker = L.marker(latLng, { icon: customIcon }).addTo(this.map);
+      
+      const name = this.workshopForm.get('nombre')?.value || 'Mi Taller';
+      this.myMarker.bindPopup(`<div style="text-align:center;font-weight:bold;color:#00F2FF;">${name}</div>`).openPopup();
+    } else {
+      this.myMarker.setLatLng(latLng);
+      if (!this.myMarker.isPopupOpen()) {
+        this.myMarker.openPopup();
+      }
+    }
   }
 
   checkExistingProfile() {
@@ -58,10 +169,21 @@ export class RegisterWorkshopComponent implements OnInit {
           }
         }
         this.checkingProfile = false;
+        // Init map after view updates
+        setTimeout(() => {
+          if (!this.createdWorkshopId && document.getElementById('workshop-map') && !this.map) {
+            this.initMap();
+          }
+        }, 100);
       },
       error: (e) => {
         // No tiene taller (404), continuar normal
         this.checkingProfile = false;
+        setTimeout(() => {
+          if (!this.createdWorkshopId && document.getElementById('workshop-map') && !this.map) {
+            this.initMap();
+          }
+        }, 100);
       }
     });
   }
@@ -71,8 +193,11 @@ export class RegisterWorkshopComponent implements OnInit {
     this.locLoading = true;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        this.workshopForm.patchValue({ latitud: pos.coords.latitude, longitud: pos.coords.longitude });
         this.locLoading = false;
+        this.updateMyMarker(pos.coords.latitude, pos.coords.longitude);
+        if (this.map) {
+          this.map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+        }
       },
       () => (this.locLoading = false),
       { enableHighAccuracy: true }

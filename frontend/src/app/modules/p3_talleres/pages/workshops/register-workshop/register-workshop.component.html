@@ -1,60 +1,119 @@
 <div class="tech-bg"></div>
 <div class="page-container">
-  <h1 class="neon-title">Registrar Taller</h1>
-  <p class="subtitle">CU10 · Configure su taller y técnicos</p>
+  <h1 class="neon-title">Registro de Taller</h1>
+  <p class="subtitle">CU10 · Forma parte de nuestra red inteligente</p>
+  
   @if (error) { <div class="error-box">{{ error }}</div> }
   @if (success) { <div class="success-box">{{ success }}</div> }
 
 @if (!checkingProfile) {
   @if (!createdWorkshopId) {
     <div class="stepper">
-      <span class="step active">1. Datos del Taller</span>
+      <span class="step active">1. Datos y Ubicación</span>
       <span class="step-divider">→</span>
-      <span class="step">2. Técnicos</span>
+      <span class="step">2. Equipo Técnico</span>
     </div>
-    <form [formGroup]="workshopForm" (ngSubmit)="registerWorkshop()" class="glass-card tech-form">
-      <div class="form-group"><label>Nombre del taller *</label><input formControlName="nombre" placeholder="Ej: Taller Los Andes" /></div>
-      <div class="form-group"><label>Dirección *</label><input formControlName="direccion" placeholder="Ej: Av. Central 123" /></div>
-      <div class="form-group"><label>📍 Ubicación GPS</label>
-        <div class="location-row">
-          <input type="number" formControlName="latitud" placeholder="Latitud" step="any" />
-          <input type="number" formControlName="longitud" placeholder="Longitud" step="any" />
-          <button type="button" class="btn-detect" (click)="detectLocation()" [disabled]="locLoading">{{ locLoading ? '⏳...' : '📍 GPS' }}</button>
+
+    <div class="registration-layout">
+      <!-- Columna Izquierda: Formulario -->
+      <form [formGroup]="workshopForm" (ngSubmit)="registerWorkshop()" class="glass-card tech-form form-panel">
+        <h2 class="tech-font" style="font-size: 1.2rem; color: #00F2FF; margin-bottom: 1.5rem; text-align: center;">Información del Taller</h2>
+        
+        <div class="form-group">
+          <label>Nombre del taller *</label>
+          <input formControlName="nombre" placeholder="Ej: Mecánica Integral Los Andes" />
         </div>
+        <div class="form-group">
+          <label>Dirección física *</label>
+          <input formControlName="direccion" placeholder="Ej: Av. Cristo Redentor 3er Anillo" />
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Teléfono de contacto</label>
+            <input formControlName="telefono" placeholder="Ej: +591 70000000" />
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input formControlName="email" type="email" placeholder="taller@ejemplo.com" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Especialidades (separadas por coma)</label>
+          <input formControlName="especialidades" placeholder="Mecánica general, Electromecánica, Inyección" />
+        </div>
+        
+        <div class="map-instructions-panel">
+          <div class="instruction-text">
+            <span>📍</span>
+            <p><strong>Ubicación GPS:</strong> Haz clic en el mapa de la derecha para fijar la posición de tu taller, o usa tu ubicación actual.</p>
+          </div>
+          <button type="button" class="btn-outline detect-btn" (click)="detectLocation()" [disabled]="locLoading">
+            {{ locLoading ? '⏳ Calculando...' : '🛰️ Usar mi GPS' }}
+          </button>
+          @if (workshopForm.get('latitud')?.value !== 0) {
+            <small class="coords-success">Coordenadas capturadas correctamente.</small>
+          }
+        </div>
+
+        <button type="submit" class="btn-premium w-full mt-2" [disabled]="workshopForm.invalid || workshopForm.get('latitud')?.value === 0">
+          Guardar Taller y Continuar ➡️
+        </button>
+      </form>
+
+      <!-- Columna Derecha: Mapa -->
+      <div class="map-panel glass-card">
+        <div class="map-header">
+          <h3>Mapa de la Red</h3>
+          <p>Los marcadores verdes son otros talleres en RutAIGeoProxi.</p>
+        </div>
+        <div id="workshop-map" class="leaflet-map-container"></div>
       </div>
-      <div class="form-group"><label>Teléfono</label><input formControlName="telefono" /></div>
-      <div class="form-group"><label>Email</label><input formControlName="email" type="email" /></div>
-      <div class="form-group"><label>Especialidades (separadas por coma)</label><input formControlName="especialidades" placeholder="mecanico, electrico, carroceria" /></div>
-      <button type="submit" class="btn-premium" [disabled]="workshopForm.invalid">Siguiente ➡️</button>
-    </form>
+    </div>
   } @else {
     <div class="stepper">
-      <span class="step completed">1. Datos del Taller ✅</span>
+      <span class="step completed">1. Datos y Ubicación ✅</span>
       <span class="step-divider">→</span>
-      <span class="step active">2. Técnicos</span>
+      <span class="step active">2. Equipo Técnico</span>
     </div>
-    <section class="glass-card">
-      <h2 class="section-title">👷 Agregar Técnicos al Taller</h2>
-      <form [formGroup]="techForm" (ngSubmit)="addTechnician()" class="tech-form">
-        <div class="form-row">
-          <input formControlName="nombre" placeholder="Nombre del técnico *" />
-          <input formControlName="telefono" placeholder="Teléfono" />
-          <input formControlName="especialidad" placeholder="Especialidad" />
-          <button type="submit" class="btn-premium small" [disabled]="techForm.invalid">➕</button>
+    <section class="glass-card tech-panel">
+      <h2 class="tech-font" style="color: #00F2FF; text-align: center; margin-bottom: 2rem;">👷 Plantilla de Técnicos</h2>
+      
+      <form [formGroup]="techForm" (ngSubmit)="addTechnician()" class="tech-form inline-add-form">
+        <div class="form-group">
+          <input formControlName="nombre" placeholder="Nombre completo *" />
         </div>
+        <div class="form-group">
+          <input formControlName="telefono" placeholder="Teléfono" />
+        </div>
+        <div class="form-group">
+          <input formControlName="especialidad" placeholder="Especialidad (opcional)" />
+        </div>
+        <button type="submit" class="btn-premium small" [disabled]="techForm.invalid">➕ Añadir</button>
       </form>
+
       @if (technicians.length > 0) {
-        <div class="tech-list">
+        <div class="tech-grid-list mt-2">
           @for (t of technicians; track t.id) {
-            <div class="tech-item">
-              <strong>{{ t.nombre }}</strong> <span>{{ t.especialidad || 'General' }}</span>
-              <span class="avail">{{ t.esta_disponible ? '🟢' : '🔴' }}</span>
+            <div class="tech-card-sm">
+              <div class="tech-avatar">👷</div>
+              <div class="tech-details">
+                <strong>{{ t.nombre }}</strong>
+                <span>{{ t.especialidad || 'Mecánico General' }}</span>
+              </div>
+              <div class="tech-status">
+                <span class="avail">{{ t.esta_disponible ? '🟢' : '🔴' }}</span>
+              </div>
             </div>
           }
         </div>
+      } @else {
+        <p class="empty-state">Agrega al menos un técnico para poder recibir solicitudes.</p>
       }
-      <div class="actions-row" style="margin-top: 2rem; display: flex; gap: 1rem;">
-        <button class="btn-premium" (click)="finishRegistration()">✅ Finalizar Registro</button>
+      
+      <div class="actions-row mt-3">
+        <button class="btn-premium" (click)="finishRegistration()">✅ Finalizar Configuración</button>
         <button class="btn-outline" (click)="router.navigate(['/home'])">Continuar más tarde</button>
       </div>
     </section>
