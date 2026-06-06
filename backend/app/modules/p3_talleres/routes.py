@@ -152,13 +152,13 @@ def get_online_status(
 @router.get(
     "/all",
     response_model=list[WorkshopOut],
-
     summary="Listar todos los talleres activos (público)",
 )
 def list_all_workshops(
+    search: str = None,
     db: Session = Depends(get_db),
 ):
-    return WorkshopService.list_all(db)
+    return WorkshopService.list_all(db, search_query=search)
 
 @router.get(
     "/active",
@@ -166,10 +166,11 @@ def list_all_workshops(
     summary="Listar todos los talleres activos del tenant",
 )
 def list_active_workshops(
+    search: str = None,
     db: Session = Depends(get_db),
     current: Usuario = Depends(get_current_user),
 ):
-    return WorkshopService.list_all_active(db, current.tenant_id)
+    return WorkshopService.list_all_active(db, current.tenant_id, search_query=search)
 
 # ═══════════════════════════════════════════════════════════════════════
 # TALLERES FAVORITOS

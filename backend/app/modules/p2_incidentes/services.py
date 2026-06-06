@@ -319,3 +319,13 @@ class IncidentService:
         db.commit()
         db.refresh(clasificacion)
         return clasificacion
+
+    @staticmethod
+    def get_heatmap_data(db: Session, tenant_id: int | None = None) -> list[dict]:
+        """Obtener coordenadas de incidentes para renderizar heatmap."""
+        from app.modules.p7_seguridad_multitenant.services import TenantFilterService
+        query = db.query(Incidente.latitud, Incidente.longitud, Incidente.severidad)
+        if tenant_id is not None:
+            query = TenantFilterService.apply_tenant_filter(query, Incidente, tenant_id)
+        incidentes = query.all()
+        return [{"lat": i.latitud, "lng": i.longitud, "severidad": i.severidad} for i in incidentes]

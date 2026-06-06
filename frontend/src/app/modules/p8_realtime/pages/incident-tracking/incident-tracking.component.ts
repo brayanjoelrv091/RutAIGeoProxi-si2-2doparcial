@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy, Input, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { RealtimeService, WSMessage } from '../../realtime.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environment';
 
 import * as L from 'leaflet';
 
@@ -34,11 +36,14 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewIn
   private tileLayer: L.TileLayer | undefined;
   private marker: L.Marker | undefined;
   private pathLine: L.Polyline | undefined;
+  private incidentMarker: L.Marker | undefined;
+  private routeLine: L.Polyline | undefined;
+  private incidentLoc: { lat: number, lng: number } | null = null;
+  private lastRouteFetch = 0;
   private themeObserver: MutationObserver | undefined;
-
   private subs: Subscription[] = [];
-
-  constructor(private realtime: RealtimeService) {}
+  
+  constructor(private realtime: RealtimeService, private http: HttpClient) {}
 
   ngOnInit(): void {
     if (this.incidentId && this.token) {
@@ -57,6 +62,15 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewIn
           }
         })
       );
+
+      // Fetch incident details to get destination
+      this.http.get<any>(`${environment.apiUrl}/api/v1/incidents/${this.incidentId}`).subscribe({
+        next: (inc) => {
+          this.incidentLoc = { lat: inc.latitud, lng: inc.longitud };
+          this.plotIncidentMarker();
+        },
+        error: (e) => console.error('Error fetching incident for routing', e)
+      });
     }
   }
 
@@ -140,7 +154,47 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewIn
       }
 
       this.pathLine.addLatLng(latLng);
+
+      // Update route using OSRM every 10 seconds
+      const now = Date.now();
+      if (this.incidentLoc && now - this.lastRouteFetch > 10000) {
+        this.lastRouteFetch = now;
+        this.fetchRoute(point.lat, point.lng, this.incidentLoc.lat, this.incidentLoc.lng);
+      }
     }
+  }
+
+  private plotIncidentMarker() {
+    if (!this.map || !this.incidentLoc) return;
+    const latLng = L.latLng(this.incidentLoc.lat, this.incidentLoc.lng);
+    const iconHtml = `<div style="font-size: 24px; text-shadow: 0 0 10px #FF3D00; animation: pulse 1s infinite;">🚨</div>`;
+    const customIcon = L.divIcon({
+      html: iconHtml,
+      className: 'custom-leaflet-icon',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+    this.incidentMarker = L.marker(latLng, { icon: customIcon }).addTo(this.map);
+    this.incidentMarker.bindPopup('<b style="color:#FF3D00;">Lugar del Incidente</b>');
+  }
+
+  private fetchRoute(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const url = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res.routes && res.routes.length > 0) {
+          const coords = res.routes[0].geometry.coordinates;
+          const latLngs = coords.map((c: number[]) => L.latLng(c[1], c[0]));
+          
+          if (this.routeLine) {
+            this.routeLine.setLatLngs(latLngs);
+          } else if (this.map) {
+            this.routeLine = L.polyline(latLngs, { color: '#00C853', weight: 5, dashArray: '10, 10' }).addTo(this.map);
+          }
+        }
+      },
+      error: (e) => console.error('OSRM Route error', e)
+    });
   }
 
   get connectionIcon(): string {

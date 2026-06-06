@@ -86,8 +86,15 @@ class WorkshopService:
         return talleres
 
     @staticmethod
-    def list_all(db: Session) -> list[Taller]:
-        talleres = db.query(Taller).filter(Taller.esta_activo == True).all()
+    def list_all(db: Session, search_query: str = None) -> list[Taller]:
+        from sqlalchemy import or_
+        query = db.query(Taller).filter(Taller.esta_activo == True)
+        if search_query:
+            query = query.filter(or_(
+                Taller.nombre.ilike(f"%{search_query}%"),
+                Taller.direccion.ilike(f"%{search_query}%")
+            ))
+        talleres = query.all()
         for t in talleres:
             t.en_linea = WorkshopService._is_online(t)
         return talleres
@@ -119,11 +126,17 @@ class WorkshopService:
         return user.talleres_favoritos if user else []
 
     @staticmethod
-    def list_all_active(db: Session, tenant_id: int | None = None) -> list[Taller]:
+    def list_all_active(db: Session, tenant_id: int | None = None, search_query: str = None) -> list[Taller]:
         from app.modules.p7_seguridad_multitenant.services import TenantFilterService
+        from sqlalchemy import or_
         query = db.query(Taller).filter(Taller.esta_activo.is_(True))
         if tenant_id is not None:
             query = TenantFilterService.apply_tenant_filter(query, Taller, tenant_id)
+        if search_query:
+            query = query.filter(or_(
+                Taller.nombre.ilike(f"%{search_query}%"),
+                Taller.direccion.ilike(f"%{search_query}%")
+            ))
         talleres = query.order_by(Taller.nombre).all()
         for t in talleres:
             t.en_linea = WorkshopService._is_online(t)

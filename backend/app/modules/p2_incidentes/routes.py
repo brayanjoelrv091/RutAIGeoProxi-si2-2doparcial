@@ -101,6 +101,17 @@ def get_incident_detail(
     return IncidentService.get_detail(db, incident_id, user_id_to_check)
 
 
+@router.get(
+    "/heatmap",
+    summary="Obtener datos para el Heatmap de incidentes",
+)
+def get_heatmap(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    return IncidentService.get_heatmap_data(db, current.tenant_id)
+
+
 @router.post(
     "/{incident_id}/classify",
     response_model=ClassificationOut,

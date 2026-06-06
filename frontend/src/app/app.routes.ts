@@ -138,6 +138,13 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('admin')]
   },
 
+  // ── Explorador de Mapa ──
+  {
+    path: 'explorer',
+    loadComponent: () => import('./modules/p1_usuarios/pages/map-explorer/map-explorer.component').then((m) => m.MapExplorerComponent),
+    canActivate: [authGuard]
+  },
+
   // ── Catch-all ──
   { path: '**', redirectTo: 'home' },
 ];

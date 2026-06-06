@@ -1,0 +1,36 @@
+<div class="tech-bg"></div>
+<div class="explorer-container">
+  <!-- Barra de Búsqueda Flotante -->
+  <div class="search-overlay glass-card">
+    <div class="search-header">
+      <h2 class="tech-font" style="color: #00F2FF; margin: 0; font-size: 1.2rem;">RutAIGeoProxi Explorer</h2>
+      <button class="btn-outline small" routerLink="/home">← Volver</button>
+    </div>
+    <div class="search-controls mt-2">
+      <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="search()" placeholder="Buscar talleres o calles..." class="search-input" />
+      <button (click)="search()" class="btn-premium search-btn">🔍</button>
+    </div>
+    
+    <div class="filters mt-2">
+      <label class="toggle-container">
+        <input type="checkbox" [(ngModel)]="showHeatmap" (change)="toggleHeatmap()" />
+        <span class="checkmark"></span>
+        Mostrar Zonas de Calor (Incidentes)
+      </label>
+    </div>
+    
+    @if (searchResults.length > 0) {
+      <div class="results-list mt-2">
+        <h4 style="color:#fff; margin-bottom: 0.5rem; border-bottom: 1px solid #333; padding-bottom: 5px;">Resultados Geográficos</h4>
+        @for (res of searchResults; track res.place_id) {
+          <div class="result-item" (click)="goToLocation(res.lat, res.lon)">
+            📍 {{ res.display_name }}
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Mapa -->
+  <div id="explorer-map" class="map-full"></div>
+</div>
