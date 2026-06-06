@@ -204,6 +204,23 @@ def wipe_database_danger_zona():
         import traceback
         return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
 
+@app.get("/api/v1/patch-taller-db", tags=["Mantenimiento"])
+def patch_taller_db():
+    """Ruta temporal para agregar la columna faltante sin borrar datos."""
+    from app.shared.database import engine
+    from sqlalchemy import text
+    import logging
+    log = logging.getLogger(__name__)
+    
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE talleres ADD COLUMN IF NOT EXISTS estado_registro VARCHAR(30) DEFAULT 'pendiente_tecnicos' NOT NULL;"))
+        log.info("Columna estado_registro añadida a talleres.")
+        return {"status": "exito", "mensaje": "Columna añadida con éxito."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
+
 @app.get("/", tags=["Sistema"])
 @app.head("/", tags=["Sistema"])
 def root():
