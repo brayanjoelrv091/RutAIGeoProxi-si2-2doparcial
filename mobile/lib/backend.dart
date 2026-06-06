@@ -178,6 +178,8 @@ class Backend {
     String? address,
     List<File>? images,
     File? audio,
+    String tipoBusqueda = 'general',
+    int? tallerPreferidoId,
   }) async {
     final request = http.MultipartRequest('POST', _uri('/incidents'));
     request.headers.addAll(await _headers(withAuth: true));
@@ -185,6 +187,10 @@ class Backend {
     request.fields['titulo'] = title;
     request.fields['latitud'] = lat.toString();
     request.fields['longitud'] = lng.toString();
+    request.fields['tipo_busqueda'] = tipoBusqueda;
+    if (tallerPreferidoId != null) {
+      request.fields['taller_preferido_id'] = tallerPreferidoId.toString();
+    }
     if (description != null && description.isNotEmpty) {
       request.fields['descripcion'] = description;
     }

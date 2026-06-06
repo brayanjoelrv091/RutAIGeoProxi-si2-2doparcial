@@ -55,6 +55,8 @@ class Incidente(Base):
     url_audio = Column(String(1000), nullable=True)
     severidad = Column(String(30), nullable=True)   # leve | moderado | grave | critico
     categoria = Column(String(50), nullable=True)    # mecanico | electrico | carroceria | ...
+    tipo_busqueda = Column(String(30), default="general", nullable=False) # general | categoria | preferido
+    taller_preferido_id = Column(Integer, ForeignKey("talleres.id", ondelete="SET NULL"), nullable=True, index=True)
     idempotency_key = Column(
         String(64),
         unique=True,

@@ -15,7 +15,7 @@
       @if (userRole === 'taller' || userRole === 'admin') {
         <a routerLink="/workshops/requests" routerLinkActive="active" (click)="menuOpen=false">📋 Solicitudes</a>
         <a routerLink="/workshops/history" routerLinkActive="active" (click)="menuOpen=false">📊 Historial</a>
-        <a routerLink="/workshops/register" routerLinkActive="active" (click)="menuOpen=false">🏪 Taller</a>
+        <a routerLink="/workshops/profile" routerLinkActive="active" (click)="menuOpen=false">🏪 Mi Taller</a>
       }
 
       @if (userRole === 'admin') {

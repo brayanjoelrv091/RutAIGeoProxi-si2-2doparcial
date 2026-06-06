@@ -14,6 +14,7 @@ class Workshop {
   final bool estaActivo;
   final double calificacionPromedio;
   final String creadoEn;
+  final bool enLinea;
 
   const Workshop({
     required this.id,
@@ -28,6 +29,7 @@ class Workshop {
     required this.estaActivo,
     required this.calificacionPromedio,
     required this.creadoEn,
+    this.enLinea = false,
   });
 
   factory Workshop.fromJson(Map<String, dynamic> j) => Workshop(
@@ -46,6 +48,7 @@ class Workshop {
         calificacionPromedio:
             (j['calificacion_promedio'] as num).toDouble(),
         creadoEn: j['creado_en'] as String,
+        enLinea: j['en_linea'] as bool? ?? false,
       );
 }
 

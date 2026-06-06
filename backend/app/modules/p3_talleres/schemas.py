@@ -32,10 +32,28 @@ class WorkshopOut(BaseModel):
     email: str | None
     especialidades: list[str] | None
     esta_activo: bool
+    estado_registro: str
+    ultimo_heartbeat: datetime | None
     calificacion_promedio: float
     creado_en: datetime
+    en_linea: bool | None = None  # Computado
 
     model_config = {"from_attributes": True}
+
+
+class WorkshopProfileOut(WorkshopOut):
+    tecnicos: list["TechnicianOut"] = []
+    
+    model_config = {"from_attributes": True}
+
+
+class WorkshopUpdate(BaseModel):
+    nombre: str | None = Field(None, min_length=2, max_length=200)
+    direccion: str | None = Field(None, min_length=5, max_length=500)
+    telefono: str | None = Field(None, max_length=50)
+    email: EmailStr | None = None
+    especialidades: list[str] | None = None
+
 
 
 # ═══════════════════════════════════════════════════════════════════════

@@ -63,6 +63,12 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('taller', 'admin')],
   },
   {
+    path: 'workshops/profile',
+    loadComponent: () =>
+      import('./modules/p3_talleres/pages/workshops/workshop-profile/workshop-profile.component').then((m) => m.WorkshopProfileComponent),
+    canActivate: [authGuard, roleGuard('taller', 'admin')],
+  },
+  {
     path: 'workshops/requests',
     loadComponent: () =>
       import('./modules/p3_talleres/pages/workshops/service-requests/service-requests.component').then((m) => m.ServiceRequestsComponent),

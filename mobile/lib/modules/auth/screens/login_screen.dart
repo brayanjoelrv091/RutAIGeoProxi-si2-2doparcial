@@ -22,6 +22,61 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePass = true;
   String _error = '';
 
+  Map<String, String> _savedAccounts = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedAccounts();
+  }
+
+  Future<void> _loadSavedAccounts() async {
+    final accounts = await AuthService.getAllSavedCredentials();
+    if (mounted) {
+      setState(() {
+        _savedAccounts = accounts;
+      });
+    }
+  }
+
+  void _showSavedAccounts() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111629),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Cuentas Guardadas', style: TextStyle(color: Color(0xFF00F2FF), fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              if (_savedAccounts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No hay cuentas guardadas', style: TextStyle(color: Colors.white54)),
+                )
+              else
+                ..._savedAccounts.entries.map((e) => ListTile(
+                  leading: const Icon(Icons.person, color: Colors.white70),
+                  title: Text(e.key, style: const TextStyle(color: Colors.white)),
+                  onTap: () {
+                    setState(() {
+                      _emailCtrl.text = e.key;
+                      _passCtrl.text = e.value;
+                    });
+                    Navigator.pop(context);
+                  },
+                )),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _loading = true; _error = ''; });
@@ -69,6 +124,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: 'Correo Electrónico',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
+                    suffixIcon: _savedAccounts.isNotEmpty ? IconButton(
+                      icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF00F2FF)),
+                      onPressed: _showSavedAccounts,
+                    ) : null,
                     validator: (v) =>
                         v == null || v.isEmpty ? 'Ingresa tu correo' : null,
                   ),

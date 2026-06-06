@@ -25,6 +25,31 @@ class WorkshopService {
     );
   }
 
+  // ── CU FAVORITOS ───────────────────────────────────────────────
+
+  static Future<void> addFavorite(int workshopId) async {
+    await ApiClient.post<dynamic>(
+      '/workshops/$workshopId/favorite',
+      fromJson: (j) => j,
+    );
+  }
+
+  static Future<void> removeFavorite(int workshopId) async {
+    await ApiClient.delete<dynamic>(
+      '/workshops/$workshopId/favorite',
+      fromJson: (j) => j,
+    );
+  }
+
+  static Future<List<Workshop>> listMyFavorites() async {
+    return ApiClient.get<List<Workshop>>(
+      '/workshops/me/favorite-workshops',
+      fromJson: (j) => (j as List<dynamic>)
+          .map((e) => Workshop.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
   static Future<Workshop> registerWorkshop({
     required String nombre,
     required String direccion,
@@ -49,10 +74,28 @@ class WorkshopService {
     );
   }
 
-  // ── CU11 — Solicitudes pendientes ────────────────────────────────
+  // ── ESTADO ONLINE Y TÉCNICOS ──────────────────────────────────────
 
-  static Future<List<ServiceRequest>> listPendingRequests(
-      int workshopId) async {
+  static Future<bool> getOnlineStatus(int workshopId) async {
+    final res = await ApiClient.get<Map<String, dynamic>>(
+      '/workshops/$workshopId/online-status',
+      fromJson: (j) => j as Map<String, dynamic>,
+    );
+    return res['en_linea'] as bool? ?? false;
+  }
+
+  static Future<List<Technician>> listTechnicians(int workshopId) async {
+    return ApiClient.get<List<Technician>>(
+      '/workshops/$workshopId/technicians',
+      fromJson: (j) => (j as List<dynamic>)
+          .map((e) => Technician.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  // ── CU11 — Listar solicitudes ─────────────────────────────────────
+
+  static Future<List<ServiceRequest>> listPendingRequests(int workshopId) async {
     return ApiClient.get<List<ServiceRequest>>(
       '/workshops/$workshopId/requests',
       fromJson: (j) => (j as List<dynamic>)

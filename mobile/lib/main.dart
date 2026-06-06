@@ -36,6 +36,7 @@ import 'modules/payments/screens/payment_screen.dart';
 import 'modules/tracking/screens/tracking_screen.dart';
 import 'modules/vehicles/screens/my_vehicles_screen.dart';
 import 'modules/workshops/screens/workshop_list_screen.dart';
+import 'modules/auth/screens/profile_screen.dart';
 import 'screens/report_incident_screen.dart';
 
 @pragma('vm:entry-point')
@@ -73,6 +74,7 @@ class RutAIGeoProxiApp extends StatelessWidget {
         '/incident-detail': (_) => const IncidentDetailScreen(),
         '/workshops': (_) => const WorkshopListScreen(),
         '/notifications': (_) => const NotificationsScreen(),
+        '/profile': (_) => const ProfileScreen(),
       },
       // Rutas con parámetros (onGenerateRoute)
       onGenerateRoute: (settings) {
@@ -356,6 +358,50 @@ class _HomeWrapperState extends State<_HomeWrapper> {
                 ),
             ],
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.person, color: Color(0xFF00F2FF)),
+            color: const Color(0xFF111629),
+            onSelected: (value) {
+              if (value == 'profile') Navigator.pushNamed(context, '/profile');
+              else if (value == 'incidents') Navigator.pushNamed(context, '/incidents');
+              else if (value == 'vehicles') Navigator.pushNamed(context, '/vehicles');
+              else if (value == 'payment') Navigator.pushNamed(context, '/payment', arguments: {'incidentId': 4, 'amount': 45000.0});
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person_outline, color: Color(0xFF00F2FF)),
+                  title: Text('Ver mi Perfil', style: TextStyle(color: Colors.white)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'incidents',
+                child: ListTile(
+                  leading: Icon(Icons.warning_amber_rounded, color: Color(0xFF00F2FF)),
+                  title: Text('Mis Incidentes', style: TextStyle(color: Colors.white)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'vehicles',
+                child: ListTile(
+                  leading: Icon(Icons.directions_car, color: Color(0xFF00BFFF)),
+                  title: Text('Mis Vehículos', style: TextStyle(color: Colors.white)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'payment',
+                child: ListTile(
+                  leading: Icon(Icons.payment, color: Color(0xFFAB47BC)),
+                  title: Text('Pagar Servicio', style: TextStyle(color: Colors.white)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white54),
             onPressed: _logout,
@@ -373,22 +419,6 @@ class _HomeWrapperState extends State<_HomeWrapper> {
               style: TextStyle(color: Colors.white54, fontSize: 15),
             ),
             const SizedBox(height: 16),
-            _HomeButton(
-              icon: Icons.warning_amber_rounded,
-              label: 'Mis Incidentes',
-              sub: 'CU7 · CU9 · Reportar y ver historial',
-              color: const Color(0xFF00F2FF),
-              onTap: () => Navigator.pushNamed(context, '/incidents'),
-            ),
-            const SizedBox(height: 10),
-            _HomeButton(
-              icon: Icons.directions_car,
-              label: 'Mis Vehículos',
-              sub: 'CU6 · Gestionar mi flota',
-              color: const Color(0xFF00BFFF),
-              onTap: () => Navigator.pushNamed(context, '/vehicles'),
-            ),
-            const SizedBox(height: 10),
             _HomeButton(
               icon: Icons.store,
               label: 'Talleres',
@@ -414,18 +444,6 @@ class _HomeWrapperState extends State<_HomeWrapper> {
                 context,
                 '/tracking',
                 arguments: {'incidentId': 3, 'role': 'cliente'},
-              ),
-            ),
-            const SizedBox(height: 10),
-            _HomeButton(
-              icon: Icons.payment,
-              label: 'Pagar Servicio',
-              sub: 'CU18 · Pasarela de pago simulada',
-              color: const Color(0xFFAB47BC),
-              onTap: () => Navigator.pushNamed(
-                context,
-                '/payment',
-                arguments: {'incidentId': 4, 'amount': 45000.0},
               ),
             ),
             const SizedBox(height: 10),

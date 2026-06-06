@@ -21,8 +21,18 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.orm import relationship
+from sqlalchemy import Table
 
 from app.shared.database import Base
+
+
+usuarios_talleres_favoritos = Table(
+    "usuarios_talleres_favoritos",
+    Base.metadata,
+    Column("usuario_id", Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True),
+    Column("taller_id", Integer, ForeignKey("talleres.id", ondelete="CASCADE"), primary_key=True),
+    Column("creado_en", DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)),
+)
 
 
 class Taller(Base):
@@ -51,6 +61,8 @@ class Taller(Base):
     email = Column(String(255), nullable=True)
     especialidades = Column(JSON, nullable=True)  # ["mecanico", "electrico", ...]
     esta_activo = Column(Boolean, default=True, nullable=False)
+    estado_registro = Column(String(30), default="pendiente_tecnicos", nullable=False)
+    ultimo_heartbeat = Column(DateTime(timezone=True), nullable=True)
     calificacion_promedio = Column(Float, default=0.0, nullable=False)
     creado_en = Column(
         DateTime(timezone=True),

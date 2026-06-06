@@ -10,7 +10,7 @@ import { WorkshopService, Technician } from '../../../workshop.service';
   templateUrl: './register-workshop.component.html',
   styleUrl: './register-workshop.component.css',
 })
-export class RegisterWorkshopComponent {
+export class RegisterWorkshopComponent implements import('@angular/core').OnInit {
   private readonly wsSvc = inject(WorkshopService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
@@ -36,6 +36,34 @@ export class RegisterWorkshopComponent {
   error = '';
   success = '';
   locLoading = false;
+  checkingProfile = true;
+
+  ngOnInit() {
+    this.checkExistingProfile();
+  }
+
+  checkExistingProfile() {
+    this.wsSvc.getMyProfile().subscribe({
+      next: (profile) => {
+        if (profile) {
+          if ((profile as any).estado_registro === 'completado') {
+            this.router.navigate(['/workshops/profile']);
+            return;
+          } else {
+            // Retomar donde quedó
+            this.createdWorkshopId = profile.id;
+            this.technicians = profile.tecnicos || [];
+            this.success = 'Retomando registro del taller...';
+          }
+        }
+        this.checkingProfile = false;
+      },
+      error: (e) => {
+        // No tiene taller (404), continuar normal
+        this.checkingProfile = false;
+      }
+    });
+  }
 
   detectLocation(): void {
     if (!navigator.geolocation) return;
@@ -61,7 +89,7 @@ export class RegisterWorkshopComponent {
     }).subscribe({
       next: (ws) => {
         this.createdWorkshopId = ws.id;
-        this.success = `Taller "${ws.nombre}" registrado correctamente`;
+        this.success = `Taller "${ws.nombre}" registrado correctamente. Ahora agregue a sus técnicos.`;
       },
       error: (e) => (this.error = e?.error?.detail || 'Error al registrar taller'),
     });
@@ -80,4 +108,14 @@ export class RegisterWorkshopComponent {
       error: (e) => (this.error = e?.error?.detail || 'Error al agregar técnico'),
     });
   }
+
+  finishRegistration(): void {
+    this.wsSvc.completeRegistration().subscribe({
+      next: () => {
+        this.router.navigate(['/workshops/profile']);
+      },
+      error: (e) => (this.error = e?.error?.detail || 'Error al completar el registro'),
+    });
+  }
 }
+

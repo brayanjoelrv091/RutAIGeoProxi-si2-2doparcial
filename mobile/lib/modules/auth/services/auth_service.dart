@@ -1,8 +1,10 @@
 /// Servicio de Autenticación Flutter (P1 — CU1-CU4).
 library;
 
+import 'dart:convert';
 import '../../../core/api_client.dart';
 import '../models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   // ── CU1 — Iniciar sesión ──────────────────────────────────────────
@@ -87,6 +89,14 @@ class AuthService {
     );
   }
 
+  static Future<void> changePassword(String currentPassword, String newPassword) async {
+    await ApiClient.patch<void>(
+      '/me/password',
+      body: {'current_password': currentPassword, 'new_password': newPassword},
+      fromJson: (_) {},
+    );
+  }
+
   static Future<Map<String, dynamic>> addVehicle({
     required String marca,
     required String modelo,
@@ -114,7 +124,47 @@ class AuthService {
     );
   }
 
+  static Future<void> saveCredentials(String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString('saved_accounts');
+    Map<String, dynamic> accounts = {};
+    if (jsonStr != null) {
+      accounts = jsonDecode(jsonStr) as Map<String, dynamic>;
+    }
+    accounts[email] = password;
+    await prefs.setString('saved_accounts', jsonEncode(accounts));
+  }
+
+  static Future<Map<String, String>> getAllSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString('saved_accounts');
+    if (jsonStr != null) {
+      final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return decoded.map((key, value) => MapEntry(key, value.toString()));
+    }
+    return {};
+  }
+
+  static Future<void> clearSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_accounts');
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────
+
+  static Future<String?> getRoleFromToken() async {
+    final token = await ApiClient.getToken();
+    if (token == null || token.isEmpty) return null;
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      return data['rol'] as String?;
+    } catch (e) {
+      return null;
+    }
+  }
 
   static Future<bool> isLoggedIn() async {
     final token = await ApiClient.getToken();

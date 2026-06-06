@@ -1,0 +1,93 @@
+<div class="page-container">
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando perfil del taller...</p>
+    </div>
+  } @else if (error) {
+    <div class="error-box">{{ error }}</div>
+    <button class="btn-outline" (click)="goBack()">Volver</button>
+  } @else if (workshop) {
+    <div class="profile-header glass-card">
+      <div class="title-row">
+        <h1 class="neon-title">{{ workshop.nombre }}</h1>
+        <div class="status-badge" [class.online]="workshop.en_linea">
+          {{ workshop.en_linea ? '🟢 Conectado' : '🔴 Desconectado' }}
+        </div>
+      </div>
+      
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="icon">📍</span>
+          <div>
+            <label>Dirección</label>
+            <p>{{ workshop.direccion }}</p>
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <span class="icon">⭐</span>
+          <div>
+            <label>Calificación</label>
+            <p>{{ workshop.calificacion_promedio }}</p>
+          </div>
+        </div>
+
+        @if (workshop.telefono) {
+          <div class="info-item">
+            <span class="icon">📞</span>
+            <div>
+              <label>Teléfono</label>
+              <p>{{ workshop.telefono }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (workshop.especialidades && workshop.especialidades.length > 0) {
+        <div class="specs-section">
+          <label>Especialidades:</label>
+          <div class="tags">
+            @for (spec of workshop.especialidades; track spec) {
+              <span class="tag">{{ spec }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="technicians-section glass-card">
+      <div class="section-header">
+        <h2>👷 Equipo Técnico</h2>
+        <span class="badge-count">{{ workshop.tecnicos.length }}</span>
+      </div>
+
+      @if (workshop.tecnicos.length === 0) {
+        <p class="empty-state">No hay técnicos registrados en este taller.</p>
+      } @else {
+        <div class="tech-grid">
+          @for (tech of workshop.tecnicos; track tech.id) {
+            <div class="tech-card">
+              <div class="tech-info">
+                <h3>{{ tech.nombre }}</h3>
+                <span class="tech-spec">{{ tech.especialidad || 'General' }}</span>
+                @if (tech.telefono) {
+                  <p class="tech-phone">📞 {{ tech.telefono }}</p>
+                }
+              </div>
+              
+              <div class="tech-status">
+                <button 
+                  class="btn-toggle" 
+                  [class.available]="tech.esta_disponible"
+                  (click)="toggleAvailability(tech.id, tech.esta_disponible)">
+                  {{ tech.esta_disponible ? '🟢 Disponible' : '🔴 Ocupado' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

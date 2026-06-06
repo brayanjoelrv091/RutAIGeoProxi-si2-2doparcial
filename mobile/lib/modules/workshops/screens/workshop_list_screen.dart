@@ -10,8 +10,10 @@ import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import '../models/workshop_model.dart';
 import '../services/workshop_service.dart';
+import '../../auth/services/auth_service.dart';
 import 'workshop_requests_screen.dart';
 import 'workshop_history_screen.dart';
+import 'workshop_technicians_screen.dart';
 import 'register_workshop_screen.dart';
 
 class WorkshopListScreen extends StatefulWidget {
@@ -21,10 +23,13 @@ class WorkshopListScreen extends StatefulWidget {
   State<WorkshopListScreen> createState() => _WorkshopListScreenState();
 }
 
-class _WorkshopListScreenState extends State<WorkshopListScreen> {
+class _WorkshopListScreenState extends State<WorkshopListScreen> with SingleTickerProviderStateMixin {
   List<Workshop> _workshops = [];
+  List<Workshop> _favoriteWorkshops = [];
+  String? _role;
   bool _loading = true;
   String _error = '';
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -38,12 +43,40 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
       _error = '';
     });
     try {
+      _role = await AuthService.getRoleFromToken();
+      if (_role == 'cliente' && _tabController == null) {
+        _tabController = TabController(length: 2, vsync: this);
+      }
       final list = await WorkshopService.listAllWorkshops();
-      setState(() => _workshops = list);
+      List<Workshop> favs = [];
+      if (_role == 'cliente') {
+        try {
+          favs = await WorkshopService.listMyFavorites();
+        } catch (_) {}
+      }
+      setState(() {
+        _workshops = list;
+        _favoriteWorkshops = favs;
+      });
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _toggleFavorite(Workshop workshop) async {
+    final isFav = _favoriteWorkshops.any((w) => w.id == workshop.id);
+    try {
+      if (isFav) {
+        await WorkshopService.removeFavorite(workshop.id);
+      } else {
+        await WorkshopService.addFavorite(workshop.id);
+      }
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -57,6 +90,14 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
           'Talleres',
           style: TextStyle(color: Color(0xFF0096FF), letterSpacing: 1),
         ),
+        bottom: _role == 'cliente' && _tabController != null ? TabBar(
+          controller: _tabController,
+          indicatorColor: const Color(0xFF0096FF),
+          tabs: const [
+            Tab(text: 'Todos'),
+            Tab(text: 'Favoritos (⭐)'),
+          ],
+        ) : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Color(0xFF0096FF)),
@@ -64,7 +105,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: _role == 'cliente' ? null : FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const RegisterWorkshopScreen()),
@@ -74,11 +115,19 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
         icon: const Icon(Icons.add_business),
         label: const Text('Registrar', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: _buildBody(),
+      body: _role == 'cliente' && _tabController != null
+          ? TabBarView(
+              controller: _tabController!,
+              children: [
+                _buildBody(_workshops),
+                _buildBody(_favoriteWorkshops),
+              ],
+            )
+          : _buildBody(_workshops),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(List<Workshop> list) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator(color: Color(0xFF0096FF)));
     }
@@ -99,7 +148,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
         ),
       );
     }
-    if (_workshops.isEmpty) {
+    if (list.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -116,22 +165,27 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
       color: const Color(0xFF0096FF),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _workshops.length,
-        itemBuilder: (_, i) => _WorkshopCard(
-          workshop: _workshops[i],
-          onRequests: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WorkshopRequestsScreen(workshop: _workshops[i]),
+        itemCount: list.length,
+        itemBuilder: (_, i) {
+          final w = list[i];
+          return _WorkshopCard(
+            workshop: w,
+            isFavorite: _favoriteIds.contains(w.id),
+            onToggleFavorite: () => _toggleFavorite(w.id),
+            onHistory: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => WorkshopHistoryScreen(workshop: w),
+              ),
             ),
-          ),
-          onHistory: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WorkshopHistoryScreen(workshop: _workshops[i]),
+            onTechnicians: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => WorkshopTechniciansScreen(workshop: w),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -139,13 +193,17 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> {
 
 class _WorkshopCard extends StatelessWidget {
   final Workshop workshop;
-  final VoidCallback onRequests;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
   final VoidCallback onHistory;
+  final VoidCallback onTechnicians;
 
   const _WorkshopCard({
     required this.workshop,
-    required this.onRequests,
+    required this.isFavorite,
+    required this.onToggleFavorite,
     required this.onHistory,
+    required this.onTechnicians,
   });
 
   @override
@@ -197,7 +255,7 @@ class _WorkshopCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: workshop.estaActivo
-                                  ? Colors.green.withValues(alpha: 0.15)
+                                  ? Colors.greenAccent.withValues(alpha: 0.15)
                                   : Colors.red.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -245,6 +303,17 @@ class _WorkshopCard extends StatelessWidget {
                             workshop.calificacionPromedio.toStringAsFixed(1),
                             style: const TextStyle(color: Colors.white54, fontSize: 12),
                           ),
+                          const Spacer(),
+                          IconButton(
+                            icon: Icon(
+                              isFavorite ? Icons.star : Icons.star_border,
+                              color: isFavorite ? Colors.amber : Colors.white54,
+                              size: 24,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: onToggleFavorite,
+                          ),
                         ],
                       ),
                     ],
@@ -258,11 +327,15 @@ class _WorkshopCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: TextButton.icon(
-                  onPressed: onRequests,
-                  icon: const Icon(Icons.inbox, size: 16),
-                  label: const Text('Solicitudes', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(foregroundColor: const Color(0xFF0096FF)),
+                child: ElevatedButton.icon(
+                  onPressed: onTechnicians,
+                  icon: const Icon(Icons.people, size: 16),
+                  label: const Text('👷 Técnicos'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0096FF).withValues(alpha: 0.1),
+                    foregroundColor: const Color(0xFF0096FF),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
                 ),
               ),
               const VerticalDivider(color: Colors.white12, width: 1),

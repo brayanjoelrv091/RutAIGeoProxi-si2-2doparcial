@@ -5,7 +5,13 @@
   @if (error) { <div class="error-box">{{ error }}</div> }
   @if (success) { <div class="success-box">{{ success }}</div> }
 
+@if (!checkingProfile) {
   @if (!createdWorkshopId) {
+    <div class="stepper">
+      <span class="step active">1. Datos del Taller</span>
+      <span class="step-divider">→</span>
+      <span class="step">2. Técnicos</span>
+    </div>
     <form [formGroup]="workshopForm" (ngSubmit)="registerWorkshop()" class="glass-card tech-form">
       <div class="form-group"><label>Nombre del taller *</label><input formControlName="nombre" placeholder="Ej: Taller Los Andes" /></div>
       <div class="form-group"><label>Dirección *</label><input formControlName="direccion" placeholder="Ej: Av. Central 123" /></div>
@@ -19,11 +25,16 @@
       <div class="form-group"><label>Teléfono</label><input formControlName="telefono" /></div>
       <div class="form-group"><label>Email</label><input formControlName="email" type="email" /></div>
       <div class="form-group"><label>Especialidades (separadas por coma)</label><input formControlName="especialidades" placeholder="mecanico, electrico, carroceria" /></div>
-      <button type="submit" class="btn-premium" [disabled]="workshopForm.invalid">🏪 Registrar Taller</button>
+      <button type="submit" class="btn-premium" [disabled]="workshopForm.invalid">Siguiente ➡️</button>
     </form>
   } @else {
+    <div class="stepper">
+      <span class="step completed">1. Datos del Taller ✅</span>
+      <span class="step-divider">→</span>
+      <span class="step active">2. Técnicos</span>
+    </div>
     <section class="glass-card">
-      <h2 class="section-title">👷 Agregar Técnicos al Taller #{{ createdWorkshopId }}</h2>
+      <h2 class="section-title">👷 Agregar Técnicos al Taller</h2>
       <form [formGroup]="techForm" (ngSubmit)="addTechnician()" class="tech-form">
         <div class="form-row">
           <input formControlName="nombre" placeholder="Nombre del técnico *" />
@@ -42,7 +53,11 @@
           }
         </div>
       }
-      <a routerLink="/workshops/requests" class="btn-premium small" style="margin-top:1rem;display:inline-block;">📋 Ver Solicitudes</a>
+      <div class="actions-row" style="margin-top: 2rem; display: flex; gap: 1rem;">
+        <button class="btn-premium" (click)="finishRegistration()">✅ Finalizar Registro</button>
+        <button class="btn-outline" (click)="router.navigate(['/home'])">Continuar más tarde</button>
+      </div>
     </section>
   }
+}
 </div>

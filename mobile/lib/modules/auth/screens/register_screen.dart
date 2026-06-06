@@ -3,6 +3,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../auth/services/auth_service.dart';
+import '../../auth/services/saved_accounts.dart';
 import '../../../core/api_client.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -36,9 +37,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (!mounted) return;
+      final email = _emailCtrl.text.trim();
+      final save = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF111629),
+          title: const Text('Guardar contraseña', style: TextStyle(color: Colors.white)),
+          content: Text('¿Deseas guardar la contraseña para $email?', style: const TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No', style: TextStyle(color: Colors.white54))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sí, guardar', style: TextStyle(color: Color(0xFF00F2FF)))),
+          ],
+        ),
+      );
+      if (save == true) {
+        await SavedAccountsManager.saveAccount(email, _passCtrl.text);
+      }
+
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cuenta creada. Ya puedes iniciar sesion.'),
+        SnackBar(
+          content: Text(save == true 
+            ? 'Cuenta creada. Credenciales guardadas.' 
+            : 'Cuenta creada. Ya puedes iniciar sesion.'),
           backgroundColor: Colors.green,
         ),
       );
@@ -147,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ],
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     height: 52,

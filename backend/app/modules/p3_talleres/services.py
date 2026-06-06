@@ -2,6 +2,7 @@
 P3 — Capa de servicios de Talleres (CU10, CU11, CU12, CU13).
 """
 
+from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
@@ -23,6 +24,14 @@ class WorkshopService:
     @staticmethod
     def register(db: Session, user_id: int, payload: WorkshopCreate) -> Taller:
         """CU10 — Registrar un nuevo taller."""
+        # Verificar si ya tiene taller
+        existing = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El usuario ya tiene un taller registrado",
+            )
+
         # Obtener tenant_id del usuario propietario
         from app.modules.p1_usuarios.models import Usuario
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
@@ -38,11 +47,21 @@ class WorkshopService:
             telefono=payload.telefono,
             email=payload.email,
             especialidades=payload.especialidades,
+            estado_registro="pendiente_tecnicos",
+            ultimo_heartbeat=datetime.now(timezone.utc)
         )
         db.add(taller)
         db.commit()
         db.refresh(taller)
+        taller.en_linea = True
         return taller
+
+    @staticmethod
+    def _is_online(taller: Taller) -> bool:
+        if not taller.ultimo_heartbeat:
+            return False
+        delta = datetime.now(timezone.utc) - taller.ultimo_heartbeat
+        return delta.total_seconds() < 120  # 2 minutos
 
     @staticmethod
     def get_by_id(db: Session, workshop_id: int) -> Taller:
@@ -52,16 +71,52 @@ class WorkshopService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Taller no encontrado",
             )
+        taller.en_linea = WorkshopService._is_online(taller)
         return taller
 
     @staticmethod
     def list_by_owner(db: Session, user_id: int) -> list[Taller]:
-        return (
+        talleres = (
             db.query(Taller)
             .filter(Taller.usuario_propietario_id == user_id)
-            .order_by(Taller.id)
             .all()
         )
+        for t in talleres:
+            t.en_linea = WorkshopService._is_online(t)
+        return talleres
+
+    @staticmethod
+    def list_all(db: Session) -> list[Taller]:
+        talleres = db.query(Taller).filter(Taller.esta_activo == True).all()
+        for t in talleres:
+            t.en_linea = WorkshopService._is_online(t)
+        return talleres
+
+    # ── FAVORITOS ───────────────────────────────────────────────
+
+    @staticmethod
+    def add_favorite(db: Session, user_id: int, workshop_id: int):
+        from app.modules.p1_usuarios.models import Usuario
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        taller = WorkshopService.get_by_id(db, workshop_id)
+        if taller not in user.talleres_favoritos:
+            user.talleres_favoritos.append(taller)
+            db.commit()
+
+    @staticmethod
+    def remove_favorite(db: Session, user_id: int, workshop_id: int):
+        from app.modules.p1_usuarios.models import Usuario
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        taller = WorkshopService.get_by_id(db, workshop_id)
+        if taller in user.talleres_favoritos:
+            user.talleres_favoritos.remove(taller)
+            db.commit()
+
+    @staticmethod
+    def list_favorites(db: Session, user_id: int) -> list[Taller]:
+        from app.modules.p1_usuarios.models import Usuario
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        return user.talleres_favoritos if user else []
 
     @staticmethod
     def list_all_active(db: Session, tenant_id: int | None = None) -> list[Taller]:
@@ -69,7 +124,51 @@ class WorkshopService:
         query = db.query(Taller).filter(Taller.esta_activo.is_(True))
         if tenant_id is not None:
             query = TenantFilterService.apply_tenant_filter(query, Taller, tenant_id)
-        return query.order_by(Taller.nombre).all()
+        talleres = query.order_by(Taller.nombre).all()
+        for t in talleres:
+            t.en_linea = WorkshopService._is_online(t)
+        return talleres
+
+    # ── HEARTBEAT Y PERFIL ──────────────────────────────────────────
+
+    @staticmethod
+    def record_heartbeat(db: Session, user_id: int) -> bool:
+        taller = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
+        if not taller:
+            return False
+        taller.ultimo_heartbeat = datetime.now(timezone.utc)
+        db.commit()
+        return True
+
+    @staticmethod
+    def complete_registration(db: Session, user_id: int) -> Taller:
+        taller = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
+        if not taller:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Taller no encontrado",
+            )
+        taller.estado_registro = "completado"
+        db.commit()
+        db.refresh(taller)
+        taller.en_linea = WorkshopService._is_online(taller)
+        return taller
+
+    @staticmethod
+    def get_profile(db: Session, user_id: int) -> Taller:
+        taller = (
+            db.query(Taller)
+            .options(joinedload(Taller.tecnicos))
+            .filter(Taller.usuario_propietario_id == user_id)
+            .first()
+        )
+        if not taller:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Taller no encontrado",
+            )
+        taller.en_linea = WorkshopService._is_online(taller)
+        return taller
 
     # ── CU10: Registrar técnicos ───────────────────────────────────
 
@@ -226,6 +325,26 @@ class WorkshopService:
                     f"Permitidas: {', '.join(sorted(allowed)) if allowed else 'ninguna (estado final)'}"
                 ),
             )
+
+        # Manejo de Concurrencia
+        if payload.estado == "proceso":
+            otra_activa = (
+                db.query(SolicitudServicio)
+                .filter(
+                    SolicitudServicio.incidente_id == solicitud.incidente_id,
+                    SolicitudServicio.id != solicitud.id,
+                    SolicitudServicio.estado.in_(["proceso", "atendido"])
+                )
+                .first()
+            )
+            if otra_activa:
+                solicitud.estado = "cancelado"
+                solicitud.notas = (solicitud.notas or "") + " [Cancelado: Incidente ya fue aceptado por otro taller]"
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Este incidente ya fue aceptado por otro taller. La solicitud ha sido cancelada."
+                )
 
         solicitud.estado = payload.estado
         if payload.notas:

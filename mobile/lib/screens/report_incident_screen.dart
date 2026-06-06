@@ -10,6 +10,8 @@ import '../backend.dart';
 import '../modules/offline/offline_queue.dart';
 import '../modules/offline/sync_manager.dart';
 import '../session.dart';
+import '../modules/workshops/models/workshop_model.dart';
+import '../modules/workshops/services/workshop_service.dart';
 
 class ReportIncidentScreen extends StatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -35,10 +37,22 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
   late AudioRecorder _audioRecorder;
   bool _isRecording = false;
 
+  String _tipoBusqueda = 'general';
+  int? _tallerPreferidoId;
+  List<Workshop> _favoritos = [];
+
   @override
   void initState() {
     super.initState();
     _audioRecorder = AudioRecorder();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final favs = await WorkshopService.listMyFavorites();
+      if (mounted) setState(() => _favoritos = favs);
+    } catch (_) {}
   }
 
   @override
@@ -233,6 +247,8 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
         address: "Ubicación detectada por GPS",
         images: _imageFiles.isEmpty ? null : _imageFiles,
         audio: _audioFile,
+        tipoBusqueda: _tipoBusqueda,
+        tallerPreferidoId: _tallerPreferidoId,
       );
 
       if (mounted) {
@@ -424,6 +440,62 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
+
+              // Tipo de búsqueda y favoritos
+              const Text('Tipo de Asignación', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _tipoBusqueda,
+                dropdownColor: const Color(0xFF111629),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFF111629),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'general', child: Text('General (Todos los talleres)')),
+                  DropdownMenuItem(value: 'preferido', child: Text('Taller Preferencial (Mis favoritos)')),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    _tipoBusqueda = val ?? 'general';
+                    if (_tipoBusqueda != 'preferido') {
+                      _tallerPreferidoId = null;
+                    }
+                  });
+                },
+              ),
+              if (_tipoBusqueda == 'preferido' && _favoritos.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  value: _tallerPreferidoId,
+                  dropdownColor: const Color(0xFF111629),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Seleccione un taller favorito',
+                    labelStyle: const TextStyle(color: Colors.white54),
+                    filled: true,
+                    fillColor: const Color(0xFF111629),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  items: _favoritos.map((w) {
+                    return DropdownMenuItem<int>(
+                      value: w.id,
+                      child: Text(w.nombre),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setState(() => _tallerPreferidoId = val),
+                  validator: (val) => _tipoBusqueda == 'preferido' && val == null ? 'Seleccione un taller' : null,
+                ),
+              ],
+              if (_tipoBusqueda == 'preferido' && _favoritos.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: Text('No tienes talleres favoritos registrados.', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ),
+
+              const SizedBox(height: 32),
 
               TextFormField(
                 controller: _titleController,

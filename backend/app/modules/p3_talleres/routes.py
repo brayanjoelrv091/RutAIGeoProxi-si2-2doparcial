@@ -28,6 +28,7 @@ from app.modules.p3_talleres.schemas import (
     TechnicianOut,
     WorkshopCreate,
     WorkshopOut,
+    WorkshopProfileOut,
 )
 from app.modules.p3_talleres.services import WorkshopService
 
@@ -59,20 +60,110 @@ def register_workshop(
 )
 def list_my_workshops(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(get_current_user),
+    current: Usuario = Depends(require_roles("taller", "admin")),
 ):
     return WorkshopService.list_by_owner(db, current.id)
 
+@router.get(
+    "/me/profile",
+    response_model=WorkshopProfileOut,
+    summary="Obtener perfil completo del taller del usuario",
+)
+def get_my_workshop_profile(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(require_roles("taller", "admin")),
+):
+    return WorkshopService.get_profile(db, current.id)
+
+@router.post(
+    "/me/complete",
+    response_model=WorkshopOut,
+    summary="Marcar registro del taller como completado",
+)
+def complete_workshop_registration(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(require_roles("taller", "admin")),
+):
+    return WorkshopService.complete_registration(db, current.id)
+
+@router.post(
+    "/heartbeat",
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar estado online del taller",
+)
+def update_heartbeat(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(require_roles("taller", "admin")),
+):
+    success = WorkshopService.record_heartbeat(db, current.id)
+    if not success:
+        return {"status": "error", "message": "No tiene taller registrado"}
+    return {"status": "ok"}
+
+
+
+@router.post(
+    "/disconnect",
+    status_code=status.HTTP_200_OK,
+    summary="Avisar que el taller se desconecta (cierre de app o pérdida voluntaria)",
+)
+def report_disconnect(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(require_roles("taller", "admin")),
+):
+    # Enviar notificación a los técnicos
+    taller = db.query(Taller).filter(Taller.usuario_propietario_id == current.id).first()
+    if taller:
+        # Marcar heartbeat viejo
+        taller.ultimo_heartbeat = None
+        db.commit()
+        
+        # Notificar a los técnicos
+        from app.modules.p5_pagos.services import NotificationService
+        from app.modules.p1_usuarios.models import Usuario
+        
+        # Buscar usuarios que tienen rol 'tecnico' y están asignados a este taller
+        # El modelo 'Tecnico' no está enlazado 1 a 1 a 'Usuario' en este diseño,
+        # pero si lo estuvieran se notificaría ahí. Aquí simplemente dejamos el código
+        # preparado para notificar a "técnicos del taller".
+        # Asumimos que los técnicos son usuarios con rol tecnico asociados (si existe relación)
+        # O simplemente registramos el evento si no hay vinculación de Usuario a Tecnico
+        pass
+
+    return {"status": "ok"}
+
+
+@router.get(
+    "/{workshop_id}/online-status",
+    summary="Consultar si un taller está online",
+)
+def get_online_status(
+    workshop_id: int,
+    db: Session = Depends(get_db),
+):
+    taller = db.query(Taller).filter(Taller.id == workshop_id).first()
+    if not taller:
+        raise HTTPException(status_code=404, detail="Taller no encontrado")
+    
+    en_linea = WorkshopService._is_online(taller)
+    return {"id": taller.id, "en_linea": en_linea}
 
 @router.get(
     "/all",
     response_model=list[WorkshopOut],
-    summary="Listar todos los talleres",
+
+    summary="Listar todos los talleres activos (público)",
 )
+def list_all_workshops(
+    db: Session = Depends(get_db),
+):
+    return WorkshopService.list_all(db)
+
 @router.get(
     "/active",
     response_model=list[WorkshopOut],
-    summary="Listar todos los talleres activos",
+    summary="Listar todos los talleres activos del tenant",
 )
 def list_active_workshops(
     db: Session = Depends(get_db),
@@ -80,8 +171,46 @@ def list_active_workshops(
 ):
     return WorkshopService.list_all_active(db, current.tenant_id)
 
+# ═══════════════════════════════════════════════════════════════════════
+# TALLERES FAVORITOS
+# ═══════════════════════════════════════════════════════════════════════
 
+@router.post(
+    "/{workshop_id}/favorite",
+    status_code=status.HTTP_200_OK,
+    summary="Añadir taller a favoritos",
+)
+def add_favorite(
+    workshop_id: int,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    WorkshopService.add_favorite(db, current.id, workshop_id)
+    return {"message": "Taller añadido a favoritos"}
 
+@router.delete(
+    "/{workshop_id}/favorite",
+    status_code=status.HTTP_200_OK,
+    summary="Quitar taller de favoritos",
+)
+def remove_favorite(
+    workshop_id: int,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    WorkshopService.remove_favorite(db, current.id, workshop_id)
+    return {"message": "Taller removido de favoritos"}
+
+@router.get(
+    "/me/favorite-workshops",
+    response_model=list[WorkshopOut],
+    summary="Listar mis talleres favoritos",
+)
+def list_my_favorites(
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    return WorkshopService.list_favorites(db, current.id)
 
 
 @router.get(

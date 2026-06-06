@@ -112,6 +112,24 @@ export class WorkshopService {
     );
   }
 
+  // ── HEARTBEAT Y PERFIL ──
+
+  getMyProfile(): Observable<Workshop & { tecnicos: Technician[] }> {
+    return this.http.get<Workshop & { tecnicos: Technician[] }>(`${this.base}/workshops/me/profile`);
+  }
+
+  completeRegistration(): Observable<Workshop> {
+    return this.http.post<Workshop>(`${this.base}/workshops/me/complete`, {});
+  }
+
+  heartbeat(): Observable<any> {
+    return this.http.post(`${this.base}/workshops/heartbeat`, {});
+  }
+
+  disconnect(): Observable<any> {
+    return this.http.post(`${this.base}/workshops/disconnect`, {});
+  }
+
   // ── CU11 ──
 
   listPendingRequests(workshopId: number): Observable<ServiceRequest[]> {

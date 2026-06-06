@@ -18,6 +18,8 @@ class IncidentCreate(BaseModel):
     latitud: float = Field(ge=-90, le=90)
     longitud: float = Field(ge=-180, le=180)
     direccion: str | None = Field(default=None, max_length=500)
+    tipo_busqueda: str = Field(default="general", max_length=30)
+    taller_preferido_id: int | None = Field(default=None)
 
 
 class MediaOut(BaseModel):
@@ -55,6 +57,8 @@ class IncidentOut(BaseModel):
     url_audio: str | None
     severidad: str | None
     categoria: str | None
+    tipo_busqueda: str
+    taller_preferido_id: int | None
     creado_en: datetime
     actualizado_en: datetime | None
 

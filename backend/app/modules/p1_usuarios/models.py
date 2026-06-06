@@ -46,6 +46,11 @@ class Usuario(Base):
     tokens_recuperacion = relationship(
         "TokenRecuperacion", back_populates="usuario", cascade="all, delete-orphan"
     )
+    talleres_favoritos = relationship(
+        "Taller",
+        secondary="usuarios_talleres_favoritos",
+        backref="usuarios_que_favorecen"
+    )
 
 
 class Vehiculo(Base):

@@ -54,6 +54,8 @@ class IncidentService:
             longitud=payload.longitud,
             direccion=payload.direccion,
             estado="nuevo",
+            tipo_busqueda=payload.tipo_busqueda,
+            taller_preferido_id=payload.taller_preferido_id,
         )
         db.add(incidente)
         db.flush()  # Obtener ID sin commit
@@ -168,21 +170,48 @@ class IncidentService:
             except OSError:
                 pass
 
-        # 5. ASIGNACIÓN AUTOMÁTICA (REQUERIMIENTO INTELIGENTE)
+        # 5. ASIGNACIÓN AUTOMÁTICA O PREFERENCIAL
         if incidente.estado == "clasificado":
             try:
                 from app.modules.p4_asignacion.services import AssignmentService
-                # Intentar asignar automáticamente en el radio por defecto (50km)
-                AssignmentService.auto_assign(db, incidente.id, background_tasks=background_tasks)
                 
-                # Auditoría de asignación automática
-                AuditService.log(
-                    db,
-                    accion=f"Asignación automática disparada para incidente #{incidente.id}",
-                    rol="Sistema"
-                )
+                if incidente.tipo_busqueda == "preferido" and incidente.taller_preferido_id:
+                    # Asignar directamente al taller preferido
+                    AssignmentService.manual_assign(
+                        db,
+                        incidente.id,
+                        incidente.taller_preferido_id,
+                        notas="Asignación directa a taller preferido.",
+                        background_tasks=background_tasks
+                    )
+                    AuditService.log(
+                        db,
+                        accion=f"Asignación a taller preferido para incidente #{incidente.id}",
+                        rol="Sistema"
+                    )
+                    
+                    # Calcular timeout
+                    timeout_secs = 60 if incidente.severidad == "critico" else 180
+                    
+                    # Programar fallback
+                    if background_tasks:
+                        background_tasks.add_task(
+                            fallback_assignment_task,
+                            incidente.id,
+                            timeout_secs
+                        )
+                else:
+                    # Intentar asignar automáticamente en el radio por defecto (50km)
+                    AssignmentService.auto_assign(db, incidente.id, background_tasks=background_tasks)
+                    
+                    # Auditoría de asignación automática
+                    AuditService.log(
+                        db,
+                        accion=f"Asignación automática disparada para incidente #{incidente.id}",
+                        rol="Sistema"
+                    )
             except Exception as e:
-                logger.error(f"No se pudo auto-asignar incidente #{incidente.id}: {e}")
+                logger.error(f"No se pudo asignar incidente #{incidente.id}: {e}")
 
         return incidente
 
