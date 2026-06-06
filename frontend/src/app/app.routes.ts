@@ -108,6 +108,30 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('admin')]
   },
 
+  // ── P9: Analítica (Dashboard) ──
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./modules/p9_analitica/pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    canActivate: [authGuard, roleGuard('admin', 'taller')]
+  },
+
+  // ── P7: Seguridad y Multi-Tenant ──
+  {
+    path: 'tenants',
+    loadComponent: () => import('./modules/p7_seguridad_multitenant/pages/tenant-list/tenant-list.component').then(m => m.TenantListComponent),
+    canActivate: [authGuard, roleGuard('admin')]
+  },
+  {
+    path: 'tenants/form',
+    loadComponent: () => import('./modules/p7_seguridad_multitenant/pages/tenant-form/tenant-form.component').then(m => m.TenantFormComponent),
+    canActivate: [authGuard, roleGuard('admin')]
+  },
+  {
+    path: 'tenants/form/:id',
+    loadComponent: () => import('./modules/p7_seguridad_multitenant/pages/tenant-form/tenant-form.component').then(m => m.TenantFormComponent),
+    canActivate: [authGuard, roleGuard('admin')]
+  },
+
   // ── Catch-all ──
   { path: '**', redirectTo: 'home' },
 ];

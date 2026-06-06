@@ -5,7 +5,7 @@
 
 class AppConfig {
   // ── Producción (Render) ──
-  static const String baseUrl = 'https://rutai-backend.onrender.com';
+  static const String baseUrl = 'https://rutaigeoproxi-back.onrender.com';
 
   // ── Desarrollo local (descomentar si trabajas en local) ──
   // import 'dart:io'; // ← mover al top del archivo si usas esto

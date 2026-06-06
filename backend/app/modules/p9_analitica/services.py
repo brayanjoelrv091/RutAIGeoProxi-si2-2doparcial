@@ -12,6 +12,8 @@ from app.modules.p2_incidentes.models import Incidente, ClasificacionIncidente
 from app.modules.p4_asignacion.models import Asignacion
 from app.modules.p9_analitica.models import Cotizacion, CotizacionItem
 from app.modules.p9_analitica.schemas import DashboardKPIs, TiempoEstimadoOut
+from app.modules.p8_realtime.models import EventoEstado
+from app.modules.p1_usuarios.models import Usuario
 
 class DashboardService:
     @staticmethod
@@ -58,14 +60,66 @@ class DashboardService:
 
         avg_asignacion = (tiempo_total_min / count_asig) if count_asig > 0 else 0.0
 
-        # Para tiempo de resolución no hay fechas estrictas de "finalizado_en" por ahora, usaremos actualizado_en
+        # Para tiempo de resolución y SLA (Cotizacion.tiempo_estimado_dias)
         res_query = inc_query.filter(Incidente.estado == "finalizado").all()
         tiempo_res_min = 0.0
+        sla_cumplidos = 0
+        talleres_stats = {}
+        tiempo_llegada_min_total = 0.0
+        count_llegada = 0
+
         for r in res_query:
             if r.actualizado_en and r.creado_en:
                 diff = r.actualizado_en - r.creado_en
                 tiempo_res_min += diff.total_seconds() / 60.0
+                
+                # Check SLA
+                cot = db.query(Cotizacion).filter(Cotizacion.incidente_id == r.id).first()
+                if cot and cot.tiempo_estimado_dias:
+                    dias_reales = diff.total_seconds() / 86400.0
+                    if dias_reales <= cot.tiempo_estimado_dias:
+                        sla_cumplidos += 1
+                        
+            # Check taller efficiency
+            asig = db.query(Asignacion).filter(Asignacion.incidente_id == r.id).first()
+            if asig:
+                taller = db.query(Usuario).filter(Usuario.id == asig.taller_id).first()
+                if taller:
+                    if taller.nombre not in talleres_stats:
+                        talleres_stats[taller.nombre] = {"count": 0, "total_min": 0}
+                    talleres_stats[taller.nombre]["count"] += 1
+                    talleres_stats[taller.nombre]["total_min"] += diff.total_seconds() / 60.0 if r.actualizado_en and r.creado_en else 0
+                    
+            # Check tiempo promedio llegada (taller_asignado -> en_atencion)
+            evento_asignado = db.query(EventoEstado).filter(EventoEstado.incidente_id == r.id, EventoEstado.estado_nuevo == "taller_asignado").first()
+            evento_llegada = db.query(EventoEstado).filter(EventoEstado.incidente_id == r.id, EventoEstado.estado_nuevo == "en_atencion").first()
+            if evento_asignado and evento_llegada:
+                diff_llegada = evento_llegada.creado_en - evento_asignado.creado_en
+                tiempo_llegada_min_total += diff_llegada.total_seconds() / 60.0
+                count_llegada += 1
+
         avg_resolucion = (tiempo_res_min / len(res_query)) if res_query else 0.0
+        avg_llegada = (tiempo_llegada_min_total / count_llegada) if count_llegada > 0 else 0.0
+        nivel_sla = (sla_cumplidos / len(res_query)) * 100 if res_query else 0.0
+
+        talleres_eficientes = []
+        for t_nombre, stats in talleres_stats.items():
+            if stats["count"] > 0:
+                avg = stats["total_min"] / stats["count"]
+                talleres_eficientes.append({"nombre": t_nombre, "avg_resolucion_min": round(avg, 2)})
+        
+        # Sort by best time (lowest is better)
+        talleres_eficientes.sort(key=lambda x: x["avg_resolucion_min"])
+
+        # Zonas calientes (agrupadas por cuadrante de aprox 1km -> round a 2 decimales)
+        zonas_dict = {}
+        for inc in incidentes:
+            if inc.latitud and inc.longitud:
+                coord = f"{round(inc.latitud, 2)}, {round(inc.longitud, 2)}"
+                zonas_dict[coord] = zonas_dict.get(coord, 0) + 1
+                
+        zonas_calientes = [{"coordenadas": k, "cantidad": v} for k, v in zonas_dict.items()]
+        zonas_calientes.sort(key=lambda x: x["cantidad"], reverse=True)
 
         return DashboardKPIs(
             tenant_id=tenant_id,
@@ -74,8 +128,12 @@ class DashboardService:
             cancelados=cancelados,
             tiempo_promedio_asignacion_min=round(avg_asignacion, 2),
             tiempo_promedio_resolucion_min=round(avg_resolucion, 2),
+            tiempo_promedio_llegada_min=round(avg_llegada, 2),
+            nivel_cumplimiento_sla=round(nivel_sla, 2),
             incidentes_por_categoria=cat_counts,
             incidentes_por_severidad=sev_counts,
+            talleres_mas_eficientes=talleres_eficientes[:5], # Top 5
+            zonas_calientes=zonas_calientes[:10], # Top 10
         )
 
 

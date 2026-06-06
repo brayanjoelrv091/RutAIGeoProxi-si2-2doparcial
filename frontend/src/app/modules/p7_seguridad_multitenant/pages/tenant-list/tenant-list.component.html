@@ -1,0 +1,49 @@
+<div class="container mx-auto p-6 bg-slate-50 min-h-screen">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Redes de Talleres (Tenants)</h1>
+    <button routerLink="/tenants/form" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+      + Nuevo Tenant
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center items-center h-64">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <div *ngIf="!loading" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nombre</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Dominio</th>
+          <th class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
+          <th class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-slate-200">
+        <tr *ngFor="let tenant of tenants" class="hover:bg-slate-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono">#{{ tenant.id }}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-bold text-slate-800">{{ tenant.nombre }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+            {{ tenant.dominio || 'N/A' }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                  [ngClass]="{'bg-green-100 text-green-800': tenant.estado === 'activo', 'bg-red-100 text-red-800': tenant.estado === 'inactivo'}">
+              {{ tenant.estado | uppercase }}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <a [routerLink]="['/tenants/form', tenant.id]" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded-md hover:bg-indigo-100 transition-colors">Editar</a>
+          </td>
+        </tr>
+        <tr *ngIf="tenants.length === 0">
+          <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No hay tenants registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

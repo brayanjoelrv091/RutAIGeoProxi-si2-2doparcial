@@ -19,8 +19,12 @@ class DashboardKPIs(BaseModel):
     cancelados: int
     tiempo_promedio_asignacion_min: float
     tiempo_promedio_resolucion_min: float
+    tiempo_promedio_llegada_min: float = 0.0
+    nivel_cumplimiento_sla: float = 0.0
     incidentes_por_categoria: dict[str, int]
     incidentes_por_severidad: dict[str, int]
+    talleres_mas_eficientes: list[dict[str, str | float]] = Field(default_factory=list)
+    zonas_calientes: list[dict[str, str | int]] = Field(default_factory=list)
 
 # ── Estimación de Tiempo (CU-32) ──
 class TiempoEstimadoOut(BaseModel):
