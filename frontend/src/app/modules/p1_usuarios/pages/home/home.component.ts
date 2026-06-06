@@ -2,13 +2,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
-import { NgClass } from '@angular/common';
+import { NgClass, UpperCasePipe } from '@angular/common';
 import { WorkshopService } from '../../../p3_talleres/workshop.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
