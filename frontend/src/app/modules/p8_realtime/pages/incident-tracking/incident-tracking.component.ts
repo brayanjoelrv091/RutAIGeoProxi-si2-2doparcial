@@ -31,8 +31,10 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewIn
 
   // ── Mapa Leaflet ──
   private map: L.Map | undefined;
+  private tileLayer: L.TileLayer | undefined;
   private marker: L.Marker | undefined;
   private pathLine: L.Polyline | undefined;
+  private themeObserver: MutationObserver | undefined;
 
   private subs: Subscription[] = [];
 
@@ -66,18 +68,36 @@ export class IncidentTrackingComponent implements OnInit, OnDestroy, AfterViewIn
     // Default to Santa Cruz, Bolivia
     this.map = L.map('leaflet-map').setView([-17.7833, -63.1821], 13);
     
-    // CartoDB Dark Matter para un look moderno
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const isLight = document.body.classList.contains('light-theme');
+    const tileUrl = isLight 
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+    this.tileLayer = L.tileLayer(tileUrl, {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(this.map);
+
+    this.themeObserver = new MutationObserver(() => {
+      if (this.tileLayer) {
+        const light = document.body.classList.contains('light-theme');
+        this.tileLayer.setUrl(light 
+          ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        );
+      }
+    });
+    this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
     this.pathLine = L.polyline([], { color: '#00F2FF', weight: 4 }).addTo(this.map);
   }
 
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
+    }
     this.realtime.disconnect();
   }
 

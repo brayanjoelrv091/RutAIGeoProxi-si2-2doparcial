@@ -43,8 +43,10 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
 
   // -- Map State --
   private map: L.Map | undefined;
+  private tileLayer: L.TileLayer | undefined;
   private myMarker: L.Marker | undefined;
   private subs: Subscription[] = [];
+  private themeObserver: MutationObserver | undefined;
   otherWorkshops: Workshop[] = [];
 
   ngOnInit() {
@@ -63,6 +65,9 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
 
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
+    if (this.themeObserver) {
+      this.themeObserver.disconnect();
+    }
     if (this.map) {
       this.map.remove();
     }
@@ -87,11 +92,27 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
     // Default to a central coordinate (e.g. Santa Cruz, Bolivia)
     this.map = L.map('workshop-map').setView([-17.7833, -63.1821], 13);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const isLight = document.body.classList.contains('light-theme');
+    const tileUrl = isLight 
+      ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+    this.tileLayer = L.tileLayer(tileUrl, {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(this.map);
+
+    this.themeObserver = new MutationObserver(() => {
+      if (this.tileLayer) {
+        const light = document.body.classList.contains('light-theme');
+        this.tileLayer.setUrl(light 
+          ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        );
+      }
+    });
+    this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
     // Plot existing workshops if already loaded
     this.plotOtherWorkshops();
