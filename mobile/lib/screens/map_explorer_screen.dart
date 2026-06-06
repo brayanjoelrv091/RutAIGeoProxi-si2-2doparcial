@@ -261,7 +261,7 @@ class _MapExplorerScreenState extends State<MapExplorerScreen> {
                 ),
                 if (_searchResults.isNotEmpty)
                   Container(
-                    margin: const EdgeInsets.top(8),
+                    margin: const EdgeInsets.only(top: 8),
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: const Color(0xFF111629).withOpacity(0.95),
