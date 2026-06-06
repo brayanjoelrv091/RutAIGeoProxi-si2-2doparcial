@@ -207,7 +207,7 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
                         points: _routePoints,
                         color: const Color(0xFF00C853),
                         strokeWidth: 5,
-                        pattern: const StrokePattern.dashed(segments: [10, 10]),
+                        pattern: StrokePattern.dashed(segments: const [10, 10]),
                       )
                     ]
                   ),
