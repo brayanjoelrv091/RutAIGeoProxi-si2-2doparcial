@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../config.dart';
 import '../modules/realtime/websocket_service.dart';
 import '../modules/realtime/gps_tracker.dart';
 import '../session.dart';
@@ -32,9 +35,12 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
   WSConnectionState _connectionState = WSConnectionState.disconnected;
   Position? _currentPosition;
   final List<LatLng> _trackPoints = [];
+  final List<LatLng> _routePoints = [];
+  LatLng? _destination;
   double _speed = 0;
   double _heading = 0;
   bool _isTracking = false;
+  DateTime? _lastRouteFetch;
 
   StreamSubscription? _wsSub;
   StreamSubscription? _wsStateSub;
@@ -44,7 +50,28 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
   void initState() {
     super.initState();
     _gpsTracker = GPSTracker(_ws);
+    _fetchIncidentDetails();
     _initWebSocket();
+  }
+
+  Future<void> _fetchIncidentDetails() async {
+    try {
+      final token = await Session.getToken();
+      final res = await http.get(
+        Uri.parse('${Config.apiUrl}/api/v1/incidents/${widget.incidentId}'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) {
+          setState(() {
+            _destination = LatLng(data['latitud'], data['longitud']);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching incident: $e');
+    }
   }
 
   Future<void> _initWebSocket() async {
@@ -65,9 +92,39 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
             _speed = (msg['velocidad_kmh'] as num?)?.toDouble() ?? 0;
             _heading = (msg['heading'] as num?)?.toDouble() ?? 0;
           });
+          _updateRoute(lat, lng);
         }
       }
     });
+  }
+
+  Future<void> _updateRoute(double currentLat, double currentLng) async {
+    if (_destination == null) return;
+    final now = DateTime.now();
+    if (_lastRouteFetch != null && now.difference(_lastRouteFetch!).inSeconds < 10) {
+      return; // Fetch once every 10 seconds
+    }
+    _lastRouteFetch = now;
+    try {
+      final url = 'http://router.project-osrm.org/route/v1/driving/$currentLng,$currentLat;${_destination!.longitude},${_destination!.latitude}?overview=full&geometries=geojson';
+      final res = await http.get(Uri.parse(url));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['routes'] != null && data['routes'].isNotEmpty) {
+          final coords = data['routes'][0]['geometry']['coordinates'] as List;
+          if (mounted) {
+            setState(() {
+              _routePoints.clear();
+              for (var c in coords) {
+                _routePoints.add(LatLng(c[1], c[0])); // geojson is lng, lat
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('OSRM Route Error: $e');
+    }
   }
 
   Future<void> _toggleTracking() async {
@@ -86,6 +143,7 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
               _speed = pos.speed * 3.6;
               _heading = pos.heading;
             });
+            _updateRoute(pos.latitude, pos.longitude);
             _mapController.move(LatLng(pos.latitude, pos.longitude), 16);
           }
         });
@@ -138,8 +196,21 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                  subdomains: const ['a','b','c','d'],
                 ),
+                // Route Line
+                if (_routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: _routePoints,
+                        color: const Color(0xFF00C853),
+                        strokeWidth: 5,
+                        isDotted: true,
+                      )
+                    ]
+                  ),
                 // Track line
                 if (_trackPoints.length > 1)
                   PolylineLayer(
@@ -174,6 +245,26 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
                           child: const Icon(Icons.navigation, color: Colors.black, size: 22),
                         ),
                       ),
+                      if (_destination != null)
+                        Marker(
+                          point: _destination!,
+                          width: 40,
+                          height: 40,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.redAccent.withOpacity(0.5),
+                                  blurRadius: 12,
+                                  spreadRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: const Center(child: Text('🚨', style: TextStyle(fontSize: 18))),
+                          )
+                        )
                     ],
                   ),
               ],

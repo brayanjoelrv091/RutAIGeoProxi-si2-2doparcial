@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../backend.dart';
+import 'map_explorer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.onLogout});
@@ -112,6 +113,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: const Icon(Icons.lock_outline, color: Colors.black),
                     label: const Text('Cambiar Contraseña', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00F2FF)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MapExplorerScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.explore, color: Colors.black),
+                    label: const Text('🗺️ Explorar Mapa y Talleres', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00F2FF),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (_me!['role'] == 'cliente') ...[
