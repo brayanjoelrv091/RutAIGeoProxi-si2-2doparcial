@@ -18,6 +18,9 @@ export interface Workshop {
   esta_activo: boolean;
   calificacion_promedio: number;
   creado_en: string;
+  en_linea?: boolean;
+  estado_registro?: string;
+  ultimo_heartbeat?: string;
 }
 
 export interface Technician {

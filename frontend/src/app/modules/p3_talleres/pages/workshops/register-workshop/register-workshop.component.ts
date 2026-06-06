@@ -1,19 +1,20 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { WorkshopService, Technician } from '../../../workshop.service';
 
 @Component({
   selector: 'app-register-workshop',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './register-workshop.component.html',
   styleUrl: './register-workshop.component.css',
 })
-export class RegisterWorkshopComponent implements import('@angular/core').OnInit {
+export class RegisterWorkshopComponent implements OnInit {
   private readonly wsSvc = inject(WorkshopService);
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
+  public readonly router = inject(Router);
 
   workshopForm = this.fb.nonNullable.group({
     nombre: ['', [Validators.required, Validators.minLength(2)]],
