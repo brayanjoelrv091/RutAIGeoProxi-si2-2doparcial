@@ -163,8 +163,14 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
         iconSize: [30, 30],
         iconAnchor: [15, 15]
       });
-      this.myMarker = L.marker(latLng, { icon: customIcon }).addTo(this.map);
+      this.myMarker = L.marker(latLng, { icon: customIcon, draggable: true }).addTo(this.map);
       
+      this.myMarker.on('dragend', (event: any) => {
+        const marker = event.target;
+        const position = marker.getLatLng();
+        this.workshopForm.patchValue({ latitud: position.lat, longitud: position.lng });
+      });
+
       const name = this.workshopForm.get('nombre')?.value || 'Mi Taller';
       this.myMarker.bindPopup(`<div style="text-align:center;font-weight:bold;color:#00F2FF;">${name}</div>`).openPopup();
     } else {
@@ -217,7 +223,7 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
         this.locLoading = false;
         this.updateMyMarker(pos.coords.latitude, pos.coords.longitude);
         if (this.map) {
-          this.map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+          this.map.setView([pos.coords.latitude, pos.coords.longitude], 18);
         }
       },
       () => (this.locLoading = false),
