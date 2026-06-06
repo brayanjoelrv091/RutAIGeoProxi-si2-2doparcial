@@ -34,7 +34,7 @@ class _MapExplorerScreenState extends State<MapExplorerScreen> {
     setState(() => _loading = true);
     try {
       final token = await Session.getToken();
-      var url = '${Config.apiUrl}/api/v1/workshops/active';
+      var url = '${AppConfig.baseUrl}/api/v1/workshops/active';
       if (query.isNotEmpty) {
         url += '?search=${Uri.encodeComponent(query)}';
       }
@@ -132,7 +132,7 @@ class _MapExplorerScreenState extends State<MapExplorerScreen> {
       try {
         final token = await Session.getToken();
         final res = await http.get(
-          Uri.parse('${Config.apiUrl}/api/v1/incidents/heatmap'),
+          Uri.parse('${AppConfig.baseUrl}/api/v1/incidents/heatmap'),
           headers: {'Authorization': 'Bearer $token'}
         );
         if (res.statusCode == 200) {
@@ -209,7 +209,8 @@ class _MapExplorerScreenState extends State<MapExplorerScreen> {
           // Search UI overlay
           Positioned(
             top: 10, left: 10, right: 10,
-            child: Column(
+            child: SafeArea(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
@@ -286,6 +287,7 @@ class _MapExplorerScreenState extends State<MapExplorerScreen> {
                   )
               ],
             ),
+            )
           )
         ],
       ),

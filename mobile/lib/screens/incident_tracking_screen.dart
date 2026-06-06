@@ -58,7 +58,7 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
     try {
       final token = await Session.getToken();
       final res = await http.get(
-        Uri.parse('${Config.apiUrl}/api/v1/incidents/${widget.incidentId}'),
+        Uri.parse('${AppConfig.baseUrl}/api/v1/incidents/${widget.incidentId}'),
         headers: {'Authorization': 'Bearer $token'},
       );
       if (res.statusCode == 200) {
@@ -207,7 +207,7 @@ class _IncidentTrackingScreenState extends State<IncidentTrackingScreen> {
                         points: _routePoints,
                         color: const Color(0xFF00C853),
                         strokeWidth: 5,
-                        isDotted: true,
+                        pattern: const StrokePattern.dashed(),
                       )
                     ]
                   ),
