@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { WorkshopService, Workshop, Technician } from '../../../../workshop.service';
+import { WorkshopService, Workshop, Technician } from '../../../workshop.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -33,7 +33,7 @@ export class WorkshopProfileComponent implements OnInit, OnDestroy {
 
   loadProfile() {
     this.wsSvc.getMyProfile().subscribe({
-      next: (profile) => {
+      next: (profile: any) => {
         this.workshop = profile;
         this.loading = false;
         if (!this.heartbeatInterval && profile.estado_registro === 'completado') {
