@@ -55,6 +55,20 @@
               <p><span>Nombre:</span> {{ me.nombre }}</p>
               <p><span>Correo:</span> {{ me.email }}</p>
               <p><span>Rol:</span> <span class="badge">{{ me.rol | uppercase }}</span></p>
+
+              @if (isAdmin) {
+                <div class="saas-widget mt-2">
+                  <h3 class="tech-font cyan-text" style="font-size: 1.1rem; margin-bottom: 0.5rem;">🏢 Suscripción SaaS</h3>
+                  <div class="plan-badge">Plan Actual: <strong>{{ (me.tenant_plan || 'Básico') | uppercase }}</strong></div>
+                  <div class="usage-stats mt-1">
+                    <p style="margin: 0; font-size: 0.9rem;">
+                      <strong>Uso de Licencia:</strong> {{ adminWorkshopsCount }} de 
+                      {{ me.tenant_plan === 'gratis' ? '1' : (me.tenant_plan === 'profesional' ? '3' : '∞') }} 
+                      Talleres permitidos.
+                    </p>
+                  </div>
+                </div>
+              }
             }
           </div>
 

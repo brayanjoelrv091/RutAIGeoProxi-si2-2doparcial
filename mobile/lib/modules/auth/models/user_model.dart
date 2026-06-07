@@ -39,6 +39,7 @@ class UserProfile {
   final bool estaActivo;
   final String rol;
   final List<Vehicle> vehiculos;
+  final String? tenantPlan;
 
   const UserProfile({
     required this.id,
@@ -48,6 +49,7 @@ class UserProfile {
     required this.estaActivo,
     required this.rol,
     required this.vehiculos,
+    this.tenantPlan,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
@@ -60,5 +62,6 @@ class UserProfile {
         vehiculos: (j['vehiculos'] as List<dynamic>? ?? [])
             .map((v) => Vehicle.fromJson(v as Map<String, dynamic>))
             .toList(),
+        tenantPlan: j['tenant_plan'] as String?,
       );
 }

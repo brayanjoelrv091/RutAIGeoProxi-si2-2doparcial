@@ -48,15 +48,66 @@
                 <small class="role-desc">Reporta incidentes y recibe asistencia</small>
               </div>
             </label>
-            <label class="role-option" [class.selected]="form.get('rol')?.value === 'taller'">
-              <input type="radio" formControlName="rol" value="taller">
+            <label class="role-option" [class.selected]="form.get('rol')?.value === 'admin'">
+              <input type="radio" formControlName="rol" value="admin">
               <div class="role-info">
-                <span class="role-label">🏪 Registrar mi Taller</span>
-                <small class="role-desc">Administra tu taller y atiende solicitudes</small>
+                <span class="role-label">🏪 Registrar mi Empresa (SaaS)</span>
+                <small class="role-desc">Administra tu red de talleres mecánicos</small>
               </div>
             </label>
           </div>
         </div>
+
+        @if (form.get('rol')?.value === 'admin') {
+          <div class="saas-section slide-down">
+            <h3 class="tech-font cyan-text mt-3 text-center">Configuración de tu Red</h3>
+            <div class="form-group mt-2">
+              <label>Nombre de la Empresa / Franquicia</label>
+              <input type="text" formControlName="tenant_name" placeholder="Ej: Red de Talleres Express" />
+            </div>
+
+            <label class="mt-2" style="display:block; text-align: center;">Elige tu Plan de Suscripción</label>
+            <div class="pricing-cards">
+              
+              <!-- Plan Gratis -->
+              <label class="pricing-card" [class.selected]="form.get('plan')?.value === 'gratis'">
+                <input type="radio" formControlName="plan" value="gratis" class="hidden-radio">
+                <div class="card-header">Gratis</div>
+                <div class="card-price">$0<span>/mes</span></div>
+                <ul class="card-features">
+                  <li>✔️ 1 Taller (Sucursal)</li>
+                  <li>✔️ 2 Técnicos Máximo</li>
+                  <li>✔️ Tracking Básico</li>
+                </ul>
+              </label>
+
+              <!-- Plan Profesional -->
+              <label class="pricing-card" [class.selected]="form.get('plan')?.value === 'profesional'">
+                <input type="radio" formControlName="plan" value="profesional" class="hidden-radio">
+                <div class="card-header pro">Profesional</div>
+                <div class="card-price">$29<span>/mes</span></div>
+                <ul class="card-features">
+                  <li>✔️ Hasta 3 Talleres</li>
+                  <li>✔️ Técnicos Ilimitados</li>
+                  <li>✔️ IA y Analíticas</li>
+                </ul>
+              </label>
+
+              <!-- Plan Empresarial -->
+              <label class="pricing-card" [class.selected]="form.get('plan')?.value === 'empresarial'">
+                <input type="radio" formControlName="plan" value="empresarial" class="hidden-radio">
+                <div class="card-header ent">Empresarial</div>
+                <div class="card-price">$99<span>/mes</span></div>
+                <ul class="card-features">
+                  <li>✔️ Talleres Ilimitados</li>
+                  <li>✔️ Usuarios Ilimitados</li>
+                  <li>✔️ API y Soporte 24/7</li>
+                </ul>
+              </label>
+
+            </div>
+          </div>
+        }
 
         @if (error) {
           <p class="error-msg-box">{{ error }}</p>
@@ -103,29 +154,29 @@
       </div>
     }
 
-    <!-- ═══ PANTALLA DE ÉXITO — TALLER ═══ -->
-    @if (ok && registeredRole === 'taller') {
+    <!-- ═══ PANTALLA DE ÉXITO — EMPRESA (SaaS) ═══ -->
+    @if (ok && registeredRole === 'admin') {
       <div class="success-panel">
-        <div class="success-icon">🏪</div>
-        <h2 class="tech-font cyan-text">¡TALLER REGISTRADO!</h2>
+        <div class="success-icon">🏢</div>
+        <h2 class="tech-font cyan-text">¡EMPRESA REGISTRADA!</h2>
         <p class="success-msg">
-          Tu cuenta de administrador de taller ha sido creada.
-          Ahora puedes acceder al panel web para gestionar tu taller.
+          Tu cuenta de administrador y tu Tenant han sido creados exitosamente.
+          Ahora puedes acceder al panel web para gestionar tu franquicia.
         </p>
 
         <div class="credentials-box">
           <p><strong>📧 Email:</strong> {{ registeredEmail }}</p>
           <p><strong>🔑 Contraseña:</strong> La que elegiste al registrarte</p>
-          <p><strong>🔧 Rol:</strong> Administrador de Taller</p>
+          <p><strong>🏢 Rol:</strong> Propietario de Empresa (SaaS)</p>
         </div>
 
         <div class="next-steps">
           <p class="download-title">📋 Próximos pasos:</p>
           <ul class="steps-list">
             <li>1. Inicia sesión en el panel web</li>
-            <li>2. Registra los datos de tu taller (dirección, especialidades)</li>
-            <li>3. Agrega a tus técnicos</li>
-            <li>4. ¡Comienza a recibir solicitudes de servicio!</li>
+            <li>2. Registra las sucursales de tu taller (según tu plan)</li>
+            <li>3. Agrega a tus técnicos en cada sucursal</li>
+            <li>4. ¡Comienza a gestionar tu red inteligente!</li>
           </ul>
         </div>
 

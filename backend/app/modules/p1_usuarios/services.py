@@ -51,7 +51,7 @@ class AuthService:
 
     @staticmethod
     def register(db: Session, payload: UserCreate) -> Usuario:
-        """CU3 — Registrar usuario (público, rol=cliente)."""
+        """CU3 — Registrar usuario (público, rol=cliente, taller o admin)."""
         if db.query(Usuario).filter(Usuario.email == payload.email).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,6 +67,37 @@ class AuthService:
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        # SaaS: Crear Tenant si el rol es 'admin'
+        if payload.rol == "admin" and payload.tenant_name and payload.plan:
+            from app.modules.p7_seguridad_multitenant.models import Tenant, TenantMembership
+            import re
+            
+            slug = re.sub(r'[^a-z0-9]+', '-', payload.tenant_name.lower()).strip('-')
+            base_slug = slug
+            counter = 1
+            while db.query(Tenant).filter(Tenant.slug == slug).first():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            tenant = Tenant(
+                nombre=payload.tenant_name,
+                slug=slug,
+                esta_activo=True,
+                plan=payload.plan
+            )
+            db.add(tenant)
+            db.commit()
+            db.refresh(tenant)
+
+            membership = TenantMembership(
+                usuario_id=user.id,
+                tenant_id=tenant.id,
+                rol_en_tenant="owner"
+            )
+            db.add(membership)
+            db.commit()
+
         return user
 
     @staticmethod
@@ -238,6 +269,14 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuario no encontrado",
             )
+        
+        setattr(user, "tenant_plan", None)
+        if user.tenant_id:
+            from app.modules.p7_seguridad_multitenant.models import Tenant
+            tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+            if tenant:
+                setattr(user, "tenant_plan", tenant.plan)
+
         return user
 
     @staticmethod

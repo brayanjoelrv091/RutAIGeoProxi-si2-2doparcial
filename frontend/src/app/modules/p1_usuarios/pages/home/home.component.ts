@@ -19,6 +19,7 @@ export class HomeComponent implements OnInit {
 
   me: Me | null = null;
   workshopProfile: any = null;
+  adminWorkshopsCount: number = 0;
   loadError = '';
   vehicleError = '';
 
@@ -57,6 +58,14 @@ export class HomeComponent implements OnInit {
           this.wsSvc.getMyProfile().subscribe({
             next: (profile: any) => this.workshopProfile = profile,
             error: () => {} // If 404, hasn't registered a workshop yet
+          });
+        }
+        if (this.isAdmin) {
+          this.wsSvc.listMyWorkshops().subscribe({
+            next: (talleres) => {
+              this.adminWorkshopsCount = talleres.length;
+            },
+            error: () => { this.adminWorkshopsCount = 0; }
           });
         }
       },

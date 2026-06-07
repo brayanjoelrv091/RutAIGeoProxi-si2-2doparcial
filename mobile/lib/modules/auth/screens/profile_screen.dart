@@ -203,10 +203,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 24),
           _ProfileItem(icon: Icons.person_outline, label: 'Nombre', value: _user!.nombre),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _ProfileItem(icon: Icons.email_outlined, label: 'Correo', value: _user!.email),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _ProfileItem(icon: Icons.badge_outlined, label: 'Rol', value: _user!.rol.toUpperCase()),
+          
+          if (_user!.rol == 'admin' && _user!.tenantPlan != null) ...[
+            const SizedBox(height: 16),
+            _ProfileItem(
+              icon: Icons.business_outlined, 
+              label: 'Plan SaaS', 
+              value: _user!.tenantPlan!.toUpperCase(),
+              valueColor: const Color(0xFF00F2FF),
+            ),
+          ],
+
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
@@ -232,29 +243,40 @@ class _ProfileItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Color? valueColor;
 
-  const _ProfileItem({required this.icon, required this.label, required this.value});
+  const _ProfileItem({required this.icon, required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF111629),
+        color: const Color(0xFF1A1F35),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: const Color(0xFF2A3050)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF00F2FF), size: 24),
+          Icon(icon, color: const Color(0xFF00F2FF), size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
                 const SizedBox(height: 4),
-                Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: valueColor ?? Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),

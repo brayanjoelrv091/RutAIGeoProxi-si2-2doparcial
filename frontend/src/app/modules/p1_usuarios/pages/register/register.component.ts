@@ -23,7 +23,7 @@ export class RegisterComponent {
   registeredEmail = '';
   showPassword = false;
 
-  form = this.fb.nonNullable.group({
+  form = this.fb.group({
     nombre: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [
@@ -31,23 +31,45 @@ export class RegisterComponent {
       Validators.minLength(8),
       Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/)
     ]],
-    rol: ['cliente', Validators.required]
+    rol: ['cliente', Validators.required],
+    tenant_name: [''],
+    plan: ['']
   });
+
+  ngOnInit() {
+    this.form.get('rol')?.valueChanges.subscribe(rol => {
+      if (rol === 'admin') {
+        this.form.get('tenant_name')?.setValidators([Validators.required]);
+        this.form.get('plan')?.setValidators([Validators.required]);
+        this.form.get('plan')?.setValue('gratis');
+      } else {
+        this.form.get('tenant_name')?.clearValidators();
+        this.form.get('plan')?.clearValidators();
+      }
+      this.form.get('tenant_name')?.updateValueAndValidity();
+      this.form.get('plan')?.updateValueAndValidity();
+    });
+  }
 
   submit(): void {
     if (this.form.invalid) return;
-    const { nombre: name, email, password, rol } = this.form.getRawValue();
+    const vals = this.form.getRawValue();
+    const name = vals.nombre!;
+    const email = vals.email!;
+    const password = vals.password!;
+    const rol = vals.rol!;
+    const tenant_name = vals.tenant_name || undefined;
+    const plan = vals.plan || undefined;
+
     this.error = '';
     this.ok = false;
     this.loading = true;
-    this.auth.register(name, email, password, rol).subscribe({
+    this.auth.register(name, email, password, rol, tenant_name, plan).subscribe({
       next: () => {
         this.ok = true;
         this.loading = false;
         this.registeredRole = rol;
         this.registeredEmail = email;
-        // Ya NO redirigimos automáticamente al login.
-        // Mostramos la pantalla de éxito con instrucciones.
       },
       error: (e) => {
         this.loading = false;

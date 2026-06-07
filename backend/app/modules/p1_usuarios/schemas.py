@@ -108,6 +108,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     rol: str = Field(default="cliente")
+    tenant_name: str | None = Field(default=None, max_length=200)
+    plan: str | None = Field(default=None, max_length=50)
 
     @field_validator("password")
     @classmethod
@@ -117,9 +119,9 @@ class UserCreate(BaseModel):
     @field_validator("rol")
     @classmethod
     def rol_valido(cls, v: str) -> str:
-        # Solo permitimos registrarse como cliente o taller públicamente
-        if v not in {"cliente", "taller"}:
-            raise ValueError("Solo se permite registro para roles 'cliente' o 'taller'")
+        # Permitimos registrarse como cliente, taller o admin (Empresa SaaS) públicamente
+        if v not in {"cliente", "taller", "admin"}:
+            raise ValueError("Solo se permite registro para roles 'cliente', 'taller' o 'admin'")
         return v
 
 
@@ -137,6 +139,7 @@ class UserOut(BaseModel):
 
 class MeResponse(UserOut):
     vehiculos: list[VehicleOut] = Field(default_factory=list)
+    tenant_plan: str | None = None
 
     model_config = {"from_attributes": True}
 

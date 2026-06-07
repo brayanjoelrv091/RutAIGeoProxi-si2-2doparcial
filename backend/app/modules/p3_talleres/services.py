@@ -27,7 +27,7 @@ class WorkshopService:
         from app.modules.p1_usuarios.models import Usuario
         user = db.query(Usuario).filter(Usuario.id == user_id).first()
         
-        # Solo bloquear a los de rol 'taller' si ya tienen uno. Admins pueden tener múltiples.
+        # Solo bloquear a los de rol 'taller' si ya tienen uno. Admins tienen límites por su Plan SaaS.
         if user and user.rol != "admin":
             existing = db.query(Taller).filter(Taller.usuario_propietario_id == user_id).first()
             if existing:
@@ -35,6 +35,23 @@ class WorkshopService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="El usuario ya tiene un taller registrado",
                 )
+        
+        if user and user.rol == "admin" and user.tenant_id:
+            from app.modules.p7_seguridad_multitenant.models import Tenant
+            tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+            if tenant and tenant.plan:
+                plan = tenant.plan.lower()
+                count = db.query(Taller).filter(Taller.tenant_id == tenant.id).count()
+                if plan == "gratis" and count >= 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Límite alcanzado. Tu plan Gratis solo permite 1 sucursal. Actualiza a Profesional."
+                    )
+                elif plan == "profesional" and count >= 3:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Límite alcanzado. Tu plan Profesional solo permite 3 sucursales. Actualiza a Empresarial."
+                    )
 
         tenant_id = user.tenant_id if user else None
 

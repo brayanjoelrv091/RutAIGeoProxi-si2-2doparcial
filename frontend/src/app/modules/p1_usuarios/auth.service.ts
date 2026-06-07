@@ -32,6 +32,7 @@ export interface Me {
   rol: string;
   permisos: Record<string, unknown> | null;
   vehiculos: Vehicle[];
+  tenant_plan?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -68,8 +69,8 @@ export class AuthService {
       );
   }
 
-  register(nombre: string, email: string, password: string, rol: string = 'cliente'): Observable<unknown> {
-    return this.http.post(`${this.base}/auth/register`, { nombre, email, password, rol });
+  register(nombre: string, email: string, password: string, rol: string = 'cliente', tenant_name?: string, plan?: string): Observable<unknown> {
+    return this.http.post(`${this.base}/auth/register`, { nombre, email, password, rol, tenant_name, plan });
   }
 
   logout(): void {
