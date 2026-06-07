@@ -57,7 +57,7 @@ export class TenantSubscriptionComponent implements OnInit {
             sessionStorage.removeItem('pending_plan');
             sessionStorage.removeItem('pending_amount');
           },
-          error: (e) => {
+          error: (e: any) => {
             alert('Error confirmando el pago: ' + e.message);
           }
         });
@@ -92,7 +92,7 @@ export class TenantSubscriptionComponent implements OnInit {
             alert('No se generó la URL de Stripe.');
           }
         },
-        error: (e) => {
+        error: (e: any) => {
           alert('Error al generar sesión de pago: ' + (e.error?.detail || 'Desconocido'));
         }
       });
@@ -109,7 +109,7 @@ export class TenantSubscriptionComponent implements OnInit {
           this.me.tenant_plan = this.upgradePlanName;
         }
       },
-      error: (e) => {
+        error: (e: any) => {
         alert('Error confirmando el pago: ' + (e.error?.detail || 'Desconocido'));
       }
     });
