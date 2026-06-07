@@ -96,6 +96,8 @@ class AuthService:
                 rol_en_tenant="owner"
             )
             db.add(membership)
+            
+            user.tenant_id = tenant.id
             db.commit()
 
         return user

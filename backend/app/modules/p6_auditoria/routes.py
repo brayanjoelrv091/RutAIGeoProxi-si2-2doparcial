@@ -24,11 +24,17 @@ class BitacoraOut(BaseModel):
 @router.get("", response_model=List[BitacoraOut], summary="Listar bitácora de auditoría (Solo Admin)")
 def list_audit_logs(
     db: Session = Depends(get_db),
-    _current: Usuario = Depends(require_roles("admin"))
+    current: Usuario = Depends(require_roles("admin"))
 ):
     """
     Retorna todos los eventos registrados en la bitácora.
     Solo accesible por usuarios con rol 'admin'.
+    Filtra por tenant si el admin pertenece a uno específico.
     """
     from app.modules.p6_auditoria.models import Bitacora
-    return db.query(Bitacora).order_by(Bitacora.creado_en.desc()).all()
+    query = db.query(Bitacora)
+    
+    if current.tenant_id is not None:
+        query = query.join(Usuario, Bitacora.usuario_id == Usuario.id).filter(Usuario.tenant_id == current.tenant_id)
+        
+    return query.order_by(Bitacora.creado_en.desc()).all()

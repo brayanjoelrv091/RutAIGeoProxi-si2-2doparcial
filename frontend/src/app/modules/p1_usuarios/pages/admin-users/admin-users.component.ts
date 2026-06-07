@@ -36,7 +36,12 @@ export class AdminUsersComponent implements OnInit {
   loading = true;
   error = '';
   editingUser: User | null = null;
-  newPermissionsStr = '';
+  permissionToggles = {
+    manage_workshops: false,
+    manage_users: false,
+    view_reports: false,
+    manage_billing: false,
+  };
 
   roles = ['admin', 'taller', 'cliente'];
 
@@ -96,26 +101,27 @@ export class AdminUsersComponent implements OnInit {
 
   openPermissions(user: User): void {
     this.editingUser = user;
-    this.newPermissionsStr = JSON.stringify(user.permisos || {}, null, 2);
+    const p = user.permisos || {};
+    this.permissionToggles = {
+      manage_workshops: !!p.manage_workshops,
+      manage_users: !!p.manage_users,
+      view_reports: !!p.view_reports,
+      manage_billing: !!p.manage_billing,
+    };
   }
 
   savePermissions(): void {
     if (!this.editingUser) return;
     
-    try {
-      const perms = JSON.parse(this.newPermissionsStr);
-      this.auth.updateUserPermissions(this.editingUser.id, perms).subscribe({
-        next: (updated) => {
-          const idx = this.users.findIndex((u) => u.id === this.editingUser!.id);
-          if (idx !== -1) this.users[idx] = updated;
-          this.editingUser = null;
-        },
-        error: (err) => {
-          alert('Error al guardar permisos');
-        },
-      });
-    } catch (e) {
-      alert('JSON de permisos inválido');
-    }
+    this.auth.updateUserPermissions(this.editingUser.id, this.permissionToggles).subscribe({
+      next: (updated) => {
+        const idx = this.users.findIndex((u) => u.id === this.editingUser!.id);
+        if (idx !== -1) this.users[idx] = updated;
+        this.editingUser = null;
+      },
+      error: (err) => {
+        alert('Error al guardar permisos');
+      },
+    });
   }
 }

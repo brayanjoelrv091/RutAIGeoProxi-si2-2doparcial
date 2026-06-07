@@ -221,6 +221,42 @@ def patch_taller_db():
         import traceback
         return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
 
+@app.get("/api/v1/bootstrap-superadmin", tags=["Mantenimiento"])
+def bootstrap_superadmin():
+    """Ruta temporal para crear o resetear el SuperAdmin."""
+    from app.shared.database import SessionLocal
+    from app.modules.p1_usuarios.models import Usuario
+    from app.shared.security import get_password_hash
+    db = SessionLocal()
+    try:
+        email = "admin@rutaigeoproxi.com"
+        password = "Admin123*"
+        user = db.query(Usuario).filter(Usuario.email == email).first()
+        if user:
+            user.hashed_password = get_password_hash(password)
+            user.rol = "admin"
+            user.tenant_id = None
+            user.esta_activo = True
+            db.commit()
+            return {"status": "exito", "mensaje": "SuperAdmin reseteado exitosamente."}
+        else:
+            nuevo_admin = Usuario(
+                nombre="SuperAdmin Principal",
+                email=email,
+                hashed_password=get_password_hash(password),
+                rol="admin",
+                esta_activo=True,
+                tenant_id=None
+            )
+            db.add(nuevo_admin)
+            db.commit()
+            return {"status": "exito", "mensaje": "SuperAdmin creado exitosamente."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
+    finally:
+        db.close()
+
 @app.get("/", tags=["Sistema"])
 @app.head("/", tags=["Sistema"])
 def root():

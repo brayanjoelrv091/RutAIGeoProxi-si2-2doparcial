@@ -60,6 +60,8 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> with SingleTick
       });
     } on ApiException catch (e) {
       setState(() => _error = e.message);
+    } catch (e) {
+      setState(() => _error = 'Error de conexión o servidor no disponible.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -155,7 +157,7 @@ class _WorkshopListScreenState extends State<WorkshopListScreen> with SingleTick
           children: [
             Icon(Icons.store_outlined, color: Colors.white24, size: 64),
             SizedBox(height: 16),
-            Text('Sin talleres registrados', style: TextStyle(color: Colors.white54, fontSize: 16)),
+            Text('No hay talleres disponibles aún', style: TextStyle(color: Colors.white54, fontSize: 16)),
           ],
         ),
       );

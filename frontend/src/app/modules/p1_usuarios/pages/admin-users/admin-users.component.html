@@ -97,7 +97,20 @@
         <h3 class="tech-font">Editar Permisos: {{ editingUser.nombre }}</h3>
         <p class="hint">Modifique el objeto JSON para ajustar privilegios extendidos.</p>
         
-        <textarea class="tech-textarea" [(ngModel)]="newPermissionsStr" rows="10" spellcheck="false"></textarea>
+        <div class="permissions-toggles" style="text-align: left; margin: 15px 0; color: #fff;">
+          <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="permissionToggles.manage_workshops" /> Gestionar Talleres y Sucursales
+          </label>
+          <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="permissionToggles.manage_users" /> Gestionar Usuarios (Personal/Clientes)
+          </label>
+          <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="permissionToggles.view_reports" /> Ver Reportes y Estadísticas Avanzadas
+          </label>
+          <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" [(ngModel)]="permissionToggles.manage_billing" /> Administrar Suscripción y Pagos
+          </label>
+        </div>
         
         <div class="modal-actions">
           <button class="btn-outline" (click)="editingUser = null">CANCELAR</button>
