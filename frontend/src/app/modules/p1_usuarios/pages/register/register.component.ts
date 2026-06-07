@@ -3,7 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth.service';
 import { NgClass } from '@angular/common';
-import { StripeQrModalComponent } from '../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
+import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-register',

@@ -4,7 +4,7 @@ import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
 import { NgClass, UpperCasePipe } from '@angular/common';
 import { WorkshopService } from '../../../p3_talleres/workshop.service';
-import { StripeQrModalComponent } from '../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
+import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-home',
