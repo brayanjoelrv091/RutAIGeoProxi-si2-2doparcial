@@ -110,6 +110,7 @@ class UserCreate(BaseModel):
     rol: str = Field(default="cliente")
     tenant_name: str | None = Field(default=None, max_length=200)
     plan: str | None = Field(default=None, max_length=50)
+    metodo_pago: str | None = Field(default=None, max_length=50)
 
     @field_validator("password")
     @classmethod
