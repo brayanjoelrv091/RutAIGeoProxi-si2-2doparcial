@@ -58,9 +58,6 @@ export class RegisterComponent {
     });
   }
 
-  showStripeModal = false;
-  stripePlanName = '';
-  stripeAmount = 0;
 
   submit(): void {
     if (this.form.invalid) return;
