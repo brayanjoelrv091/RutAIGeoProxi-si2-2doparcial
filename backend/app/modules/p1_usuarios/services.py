@@ -46,15 +46,17 @@ from app.modules.p1_usuarios.schemas import (
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def notify_superadmins_bg(plan: str, nombre: str):
+async def notify_superadmins_bg(tenant_name: str, plan: str, monto: float, metodo: str):
     from app.shared.database import SessionLocal
     from app.modules.p1_usuarios.models import Usuario
     from app.shared.websocket_manager import manager
     from app.modules.p5_pagos.models import Notificacion
+    from datetime import datetime
     db = SessionLocal()
     try:
         superadmins = db.query(Usuario).filter(Usuario.rol == "admin", Usuario.tenant_id.is_(None)).all()
-        message = f"Se realizó un registro de plan {plan.upper()} por {nombre}."
+        fecha_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        message = f"Un nuevo cliente se ha registrado con el nombre de la web: {tenant_name}. Se suscribió al plan {plan.upper()} de ${monto} con fecha {fecha_str}. Validó su pago con {metodo}."
         payload = {
             "type": "notification",
             "titulo": "Nuevo Registro SaaS",
@@ -110,13 +112,13 @@ class AuthService:
             if payload.plan == "gratis":
                 fecha_fin = datetime.utcnow() + timedelta(days=30)
             elif payload.plan == "profesional":
-                estado_pago = "pagado"
+                estado_pago = "pendiente" if payload.metodo_pago == "tarjeta" else "pagado"
                 monto_pago = 29
                 fecha_fin = datetime.utcnow() + timedelta(days=30)
                 if not payload.metodo_pago:
                     metodo_pago = "tarjeta"
             elif payload.plan == "empresarial":
-                estado_pago = "pagado"
+                estado_pago = "pendiente" if payload.metodo_pago == "tarjeta" else "pagado"
                 monto_pago = 99
                 fecha_fin = datetime.utcnow() + timedelta(days=365)
                 if not payload.metodo_pago:
@@ -148,8 +150,8 @@ class AuthService:
             user.tenant_id = tenant.id
             db.commit()
 
-            if background_tasks:
-                background_tasks.add_task(notify_superadmins_bg, payload.plan, user.nombre)
+            if background_tasks and estado_pago == "pagado":
+                background_tasks.add_task(notify_superadmins_bg, tenant.nombre, payload.plan, monto_pago, metodo_pago)
 
             # --- STRIPE CHECKOUT ---
             setattr(user, "checkout_url", None)
@@ -175,8 +177,8 @@ class AuthService:
                             'quantity': 1,
                         }],
                         mode='payment',
-                        success_url=f"{frontend_url}/login?payment_success=true",
-                        cancel_url=f"{frontend_url}/login?payment_cancelled=true",
+                        success_url=f"{frontend_url}/register?payment_success=true&email={payload.email}&plan={payload.plan}&metodo_pago=tarjeta",
+                        cancel_url=f"{frontend_url}/register?payment_cancelled=true",
                         client_reference_id=str(tenant.id)
                     )
                     setattr(user, "checkout_url", session.url)
@@ -186,6 +188,25 @@ class AuthService:
                     pass # Falla silenciosamente y permite al usuario registrarse gratis
 
         return user
+
+    @staticmethod
+    def confirm_register_payment(db: Session, email: str, background_tasks: 'BackgroundTasks' = None):
+        """Confirma el pago de registro de un usuario"""
+        user = db.query(Usuario).filter(Usuario.email == email).first()
+        if not user or not user.tenant_id:
+            raise HTTPException(status_code=404, detail="Usuario o Tenant no encontrado.")
+            
+        from app.modules.p7_seguridad_multitenant.models import Tenant
+        tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+        if not tenant:
+            raise HTTPException(status_code=404, detail="Tenant no encontrado.")
+
+        if tenant.estado_pago != "pagado":
+            tenant.estado_pago = "pagado"
+            db.commit()
+            if background_tasks:
+                background_tasks.add_task(notify_superadmins_bg, tenant.nombre, tenant.plan, tenant.monto_pago, tenant.metodo_pago)
+        return {"status": "ok"}
 
     @staticmethod
     def login(db: Session, payload: LoginRequest) -> tuple[TokenResponse, Usuario]:

@@ -67,6 +67,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status, Backgrou
 def register(payload: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     return AuthService.register(db, payload, background_tasks)
 
+from pydantic import BaseModel
+class ConfirmRegisterPaymentRequest(BaseModel):
+    email: str
+
+@auth_router.post(
+    "/register/confirm",
+    summary="Confirma el pago de Stripe durante el registro de SaaS",
+)
+def confirm_register(payload: ConfirmRegisterPaymentRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return AuthService.confirm_register_payment(db, email=payload.email, background_tasks=background_tasks)
+
 
 @auth_router.post(
     "/login",

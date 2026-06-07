@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../auth.service';
 import { NgClass, UpperCasePipe } from '@angular/common';
 import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
@@ -28,6 +28,7 @@ export class RegisterComponent {
   showStripeModal = false;
   stripePlanName = '';
   stripeAmount = 0;
+  registeredPlan = '';
 
   form = this.fb.group({
     nombre: ['', Validators.required],
@@ -43,7 +44,34 @@ export class RegisterComponent {
     metodo_pago: ['tarjeta']
   });
 
+  private readonly route = inject(ActivatedRoute);
+
   ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['payment_success'] === 'true') {
+        const email = params['email'];
+        const plan = params['plan'];
+        if (email) {
+          this.loading = true;
+          this.auth.confirmRegisterPayment(email).subscribe({
+            next: () => {
+              this.loading = false;
+              this.ok = true;
+              this.registeredRole = 'admin';
+              this.registeredEmail = email;
+              this.registeredPlan = plan || 'profesional';
+              // Limpiar url
+              this.router.navigate([], { replaceUrl: true });
+            },
+            error: () => {
+              this.loading = false;
+              this.error = 'Error confirmando el pago. Contacte a soporte.';
+            }
+          });
+        }
+      }
+    });
+
     this.form.get('rol')?.valueChanges.subscribe(rol => {
       if (rol === 'admin') {
         this.form.get('tenant_name')?.setValidators([Validators.required]);
@@ -95,6 +123,7 @@ export class RegisterComponent {
         this.loading = false;
         this.registeredRole = rol;
         this.registeredEmail = email;
+        this.registeredPlan = plan || 'gratis';
       },
       error: (e) => {
         this.loading = false;
