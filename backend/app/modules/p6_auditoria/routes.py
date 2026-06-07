@@ -14,6 +14,8 @@ router = APIRouter(prefix="/admin/audit", tags=["P6 · Auditoría"])
 class BitacoraOut(BaseModel):
     id: int
     usuario_id: int | None
+    usuario_nombre: str | None = None
+    usuario_email: str | None = None
     rol: str | None
     accion: str
     ip: str | None = None
@@ -42,4 +44,19 @@ def list_audit_logs(
             (Usuario.tenant_id.is_(None)) | (Bitacora.usuario_id.is_(None))
         )
         
-    return query.order_by(Bitacora.creado_en.desc()).all()
+    results = query.order_by(Bitacora.creado_en.desc()).all()
+    
+    out = []
+    for b in results:
+        user = db.query(Usuario).filter(Usuario.id == b.usuario_id).first() if b.usuario_id else None
+        out.append({
+            "id": b.id,
+            "usuario_id": b.usuario_id,
+            "usuario_nombre": user.nombre if user else "Sistema",
+            "usuario_email": user.email if user else "N/A",
+            "rol": b.rol,
+            "accion": b.accion,
+            "ip": b.ip,
+            "creado_en": b.creado_en
+        })
+    return out

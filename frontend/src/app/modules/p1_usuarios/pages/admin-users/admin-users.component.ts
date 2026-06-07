@@ -15,7 +15,9 @@ interface User {
 
 interface Bitacora {
   id: number;
-  usuario_id: number;
+  usuario_id: number | null;
+  usuario_nombre: string | null;
+  usuario_email: string | null;
   rol: string;
   accion: string;
   ip: string;
