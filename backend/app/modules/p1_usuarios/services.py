@@ -103,7 +103,7 @@ class AuthService:
         return user
 
     @staticmethod
-    def login(db: Session, payload: LoginRequest) -> TokenResponse:
+    def login(db: Session, payload: LoginRequest) -> tuple[TokenResponse, Usuario]:
         """CU1 — Inicio de sesión con JWT y Rate Limiting."""
         user = db.query(Usuario).filter(Usuario.email == payload.email).first()
         now = datetime.now(timezone.utc)
@@ -177,7 +177,7 @@ class AuthService:
 
         token, _jti, expire = create_access_token(user_id=user.id, role=user.rol)
         expires_in = max(0, int((expire - now).total_seconds()))
-        return TokenResponse(access_token=token, expires_in=expires_in)
+        return TokenResponse(access_token=token, expires_in=expires_in), user
 
     @staticmethod
     def logout(db: Session, _token: str, payload: dict) -> None:

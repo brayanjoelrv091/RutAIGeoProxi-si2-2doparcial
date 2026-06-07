@@ -73,8 +73,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     import traceback
     try:
-        token_resp = AuthService.login(db, payload)
-        AuditService.log(db, accion=f"Inicio de sesión exitoso ({payload.email})", request=request)
+        token_resp, user = AuthService.login(db, payload)
+        AuditService.log(db, accion=f"Inicio de sesión exitoso ({payload.email})", request=request, usuario_id=user.id, rol=user.rol)
         return token_resp
     except HTTPException:
         raise

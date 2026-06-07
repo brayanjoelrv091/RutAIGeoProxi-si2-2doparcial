@@ -133,6 +133,7 @@ class UserOut(BaseModel):
     esta_activo: bool
     rol: str
     permisos: dict[str, Any] | None
+    tenant_id: int | None = None
 
     model_config = {"from_attributes": True}
 
