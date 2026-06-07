@@ -37,20 +37,36 @@ def require_superadmin(current: Usuario = Depends(require_roles("admin"))):
 
 from fastapi import BackgroundTasks
 
-async def notify_tenant_users_bg(tenant_id: int):
+async def notify_tenant_users_bg(tenant_id: int, is_suspended: bool, tenant_name: str):
     from app.shared.database import SessionLocal
     from app.modules.p1_usuarios.models import Usuario
     from app.shared.websocket_manager import manager
+    from app.shared.firebase_config import send_push_notification
     db = SessionLocal()
     try:
         users = db.query(Usuario).filter(Usuario.tenant_id == tenant_id).all()
+        
+        if is_suspended:
+            titulo = f"Cuenta Suspendida - {tenant_name}"
+            mensaje = f"Su cuenta ha sido inactivada debido al vencimiento o falta de pago. De parte del equipo de RutAIGeoProxi."
+            payload_type = "tenant_suspended"
+        else:
+            titulo = f"¡Bienvenido de Nuevo! - {tenant_name}"
+            mensaje = "Su cuenta ha sido reactivada. Gracias por confiar en RutAIGeoProxi."
+            payload_type = "tenant_reactivated"
+            
         payload = {
-            "type": "tenant_suspended",
-            "titulo": "Cuenta Suspendida",
-            "mensaje": "Su cuenta ha sido suspendida debido a que la suscripción de su empresa expiró o no se pagó a tiempo.",
+            "type": payload_type,
+            "titulo": titulo,
+            "mensaje": mensaje,
         }
+        
         for u in users:
+            # WebSocket Notification
             await manager.send_personal_message(payload, str(u.id))
+            # FCM Push Notification
+            if u.fcm_token:
+                send_push_notification(u.fcm_token, titulo, mensaje)
     finally:
         db.close()
 
@@ -89,8 +105,9 @@ def update_tenant_status(
     db.commit()
     db.refresh(tenant)
     
-    # Notify all users if suspended
-    if was_active and not payload.esta_activo:
-        background_tasks.add_task(notify_tenant_users_bg, tenant_id)
+    # Notify all users if status changed
+    if was_active != payload.esta_activo:
+        is_suspended = not payload.esta_activo
+        background_tasks.add_task(notify_tenant_users_bg, tenant_id, is_suspended, tenant.nombre)
         
     return tenant

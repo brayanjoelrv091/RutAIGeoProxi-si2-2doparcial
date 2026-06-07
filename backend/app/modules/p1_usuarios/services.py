@@ -106,14 +106,23 @@ class AuthService:
 
             estado_pago = "gratis"
             monto_pago = 0
-            fecha_fin = None
             metodo_pago = payload.metodo_pago or "ninguno"
-            if payload.plan != "gratis":
+            if payload.plan == "gratis":
+                fecha_fin = datetime.utcnow() + timedelta(days=30)
+            elif payload.plan == "profesional":
                 estado_pago = "pagado"
-                monto_pago = 29 if payload.plan == "profesional" else 99
-                fecha_fin = datetime.now(timezone.utc) + timedelta(days=30)
+                monto_pago = 29
+                fecha_fin = datetime.utcnow() + timedelta(days=30)
                 if not payload.metodo_pago:
                     metodo_pago = "tarjeta"
+            elif payload.plan == "empresarial":
+                estado_pago = "pagado"
+                monto_pago = 99
+                fecha_fin = datetime.utcnow() + timedelta(days=365)
+                if not payload.metodo_pago:
+                    metodo_pago = "tarjeta"
+            else:
+                fecha_fin = None
 
             tenant = Tenant(
                 nombre=payload.tenant_name,
