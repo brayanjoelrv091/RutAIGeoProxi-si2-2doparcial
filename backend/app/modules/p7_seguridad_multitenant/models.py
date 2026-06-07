@@ -29,6 +29,10 @@ class Tenant(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    fecha_fin_plan = Column(DateTime(timezone=True), nullable=True)
+    estado_pago = Column(String(50), default="gratis", nullable=False)
+    metodo_pago = Column(String(50), default="ninguno", nullable=False)
+    monto_pago = Column(Integer, default=0, nullable=False)
 
     # ── Relaciones ──
     miembros = relationship(

@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { environment } from '../../../../environment';
 import { AuthService } from '../../auth.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Tenant {
   id: number;
@@ -10,6 +12,11 @@ interface Tenant {
   esta_activo: boolean;
   plan: string;
   creado_en: string;
+  fecha_fin_plan: string | null;
+  estado_pago: string;
+  metodo_pago: string;
+  monto_pago: number;
+  admin_nombre: string;
 }
 
 @Component({
@@ -78,5 +85,73 @@ export class SuperadminSaasComponent implements OnInit {
     } catch (e) {
       alert('Error de red al actualizar estado.');
     }
+  }
+
+  exportCSV() {
+    if (this.tenants.length === 0) return;
+    
+    const headers = ['ID', 'Empresa', 'Admin', 'Plan', 'Monto ($)', 'Método Pago', 'Estado', 'Suscripción Activa', 'F. Creación', 'F. Vencimiento'];
+    const rows = this.tenants.map(t => [
+      t.id,
+      t.nombre,
+      t.admin_nombre,
+      t.plan.toUpperCase(),
+      t.monto_pago,
+      t.metodo_pago.toUpperCase(),
+      t.estado_pago.toUpperCase(),
+      t.esta_activo ? 'SI' : 'NO',
+      new Date(t.creado_en).toLocaleDateString(),
+      t.fecha_fin_plan ? new Date(t.fecha_fin_plan).toLocaleDateString() : 'Ilimitado'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SaaS_Historial_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  exportPDF() {
+    if (this.tenants.length === 0) return;
+
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Historial de Suscripciones SaaS', 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableColumn = ["ID", "Empresa", "Plan", "Monto", "Estado", "Vencimiento"];
+    const tableRows: any[] = [];
+
+    this.tenants.forEach(t => {
+      const row = [
+        t.id,
+        t.nombre,
+        t.plan.toUpperCase(),
+        `$${t.monto_pago}`,
+        t.esta_activo ? 'ACTIVO' : 'SUSPENDIDO',
+        t.fecha_fin_plan ? new Date(t.fecha_fin_plan).toLocaleDateString() : 'N/A'
+      ];
+      tableRows.push(row);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [0, 242, 255], textColor: [0, 0, 0] }
+    });
+
+    doc.save(`SaaS_Historial_${new Date().toISOString().split('T')[0]}.pdf`);
   }
 }

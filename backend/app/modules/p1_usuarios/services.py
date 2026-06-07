@@ -46,11 +46,35 @@ from app.modules.p1_usuarios.schemas import (
 # ═══════════════════════════════════════════════════════════════════════
 
 
+async def notify_superadmins_bg(plan: str, nombre: str):
+    from app.shared.database import SessionLocal
+    from app.modules.p1_usuarios.models import Usuario
+    from app.shared.websocket_manager import manager
+    from app.modules.p5_pagos.models import Notificacion
+    db = SessionLocal()
+    try:
+        superadmins = db.query(Usuario).filter(Usuario.rol == "admin", Usuario.tenant_id.is_(None)).all()
+        message = f"Se realizó un registro de plan {plan.upper()} por {nombre}."
+        payload = {
+            "type": "notification",
+            "titulo": "Nuevo Registro SaaS",
+            "mensaje": message,
+        }
+        for admin in superadmins:
+            await manager.send_personal_message(payload, str(admin.id))
+            db.add(Notificacion(usuario_id=admin.id, titulo="Nuevo Registro SaaS", mensaje=message, tipo="push"))
+            if admin.fcm_token:
+                from app.shared.firebase_config import send_push_notification
+                send_push_notification(admin.fcm_token, "Nuevo Registro SaaS", message, data={"type": "notification"})
+        db.commit()
+    finally:
+        db.close()
+
 class AuthService:
     """Servicio de autenticación y registro."""
 
     @staticmethod
-    def register(db: Session, payload: UserCreate) -> Usuario:
+    def register(db: Session, payload: UserCreate, background_tasks: 'BackgroundTasks' = None) -> Usuario:
         """CU3 — Registrar usuario (público, rol=cliente, taller o admin)."""
         if db.query(Usuario).filter(Usuario.email == payload.email).first():
             raise HTTPException(
@@ -80,11 +104,26 @@ class AuthService:
                 slug = f"{base_slug}-{counter}"
                 counter += 1
 
+            estado_pago = "gratis"
+            monto_pago = 0
+            fecha_fin = None
+            metodo_pago = payload.metodo_pago or "ninguno"
+            if payload.plan != "gratis":
+                estado_pago = "pagado"
+                monto_pago = 29 if payload.plan == "profesional" else 99
+                fecha_fin = datetime.now(timezone.utc) + timedelta(days=30)
+                if not payload.metodo_pago:
+                    metodo_pago = "tarjeta"
+
             tenant = Tenant(
                 nombre=payload.tenant_name,
                 slug=slug,
                 esta_activo=True,
-                plan=payload.plan
+                plan=payload.plan,
+                estado_pago=estado_pago,
+                monto_pago=monto_pago,
+                fecha_fin_plan=fecha_fin,
+                metodo_pago=metodo_pago
             )
             db.add(tenant)
             db.commit()
@@ -99,6 +138,9 @@ class AuthService:
             
             user.tenant_id = tenant.id
             db.commit()
+
+            if background_tasks:
+                background_tasks.add_task(notify_superadmins_bg, payload.plan, user.nombre)
 
         return user
 
@@ -119,6 +161,16 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Cuenta desactivada permanentemente. Por favor, contacta a soporte@rutaigeoproxi.com",
             )
+            
+        # Bloqueo SaaS: Si el Tenant está suspendido
+        if user.tenant_id:
+            from app.modules.p7_seguridad_multitenant.models import Tenant
+            tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+            if tenant and not tenant.esta_activo:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Tu cuenta de empresa (SaaS) ha sido suspendida. Por favor, regulariza el pago.",
+                )
 
         if user.bloqueado_hasta:
             bh = user.bloqueado_hasta.replace(tzinfo=timezone.utc) if user.bloqueado_hasta.tzinfo is None else user.bloqueado_hasta

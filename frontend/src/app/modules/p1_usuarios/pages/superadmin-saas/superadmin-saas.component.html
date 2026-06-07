@@ -2,6 +2,14 @@
   <div class="tech-header">
     <h2><span class="tech-icon">🌐</span> Gestión SaaS Global</h2>
     <p class="subtitle">Panel exclusivo para SuperAdmin: controla todas las suscripciones de los Tenants.</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button class="btn-premium" style="padding: 8px 15px; font-size: 0.9rem;" (click)="exportCSV()">
+        <i class="fas fa-file-excel"></i> Descargar CSV (Excel)
+      </button>
+      <button class="btn-outline-cyan" style="padding: 8px 15px; font-size: 0.9rem;" (click)="exportPDF()">
+        <i class="fas fa-file-pdf"></i> Exportar PDF
+      </button>
+    </div>
   </div>
 
   @if (loading) {
@@ -20,11 +28,12 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Empresa / Tenant</th>
-            <th>Slug</th>
+            <th>Empresa</th>
+            <th>Admin</th>
             <th>Plan SaaS</th>
+            <th>Finanzas</th>
+            <th>Vencimiento</th>
             <th>Estado</th>
-            <th>Fecha Creación</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -33,7 +42,7 @@
             <tr>
               <td class="tech-id">#{{ tenant.id }}</td>
               <td><strong>{{ tenant.nombre }}</strong></td>
-              <td style="color: #888;">{{ tenant.slug }}</td>
+              <td style="color: #888;">{{ tenant.admin_nombre }}</td>
               <td>
                 <span class="badge" [ngClass]="{
                   'badge-basico': tenant.plan === 'basico',
@@ -42,13 +51,26 @@
                 }">{{ tenant.plan | uppercase }}</span>
               </td>
               <td>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                  <span style="font-size: 0.9rem; color: #fff;">${{ tenant.monto_pago }}</span>
+                  <span style="font-size: 0.75rem; color: #00f2ff;">{{ tenant.metodo_pago | uppercase }}</span>
+                  @if (tenant.estado_pago === 'pagado') {
+                    <span style="color: #00ffaa; font-size: 0.75rem;">PAGADO</span>
+                  } @else {
+                    <span style="color: #aaa; font-size: 0.75rem;">GRATIS</span>
+                  }
+                </div>
+              </td>
+              <td style="color: #aaa;">
+                {{ tenant.fecha_fin_plan ? (tenant.fecha_fin_plan | date:'dd/MM/yyyy') : 'Ilimitado' }}
+              </td>
+              <td>
                 @if (tenant.esta_activo) {
                   <span class="badge" style="background: #00ffaa; color: #000;">ACTIVO</span>
                 } @else {
                   <span class="badge" style="background: #ff0055;">SUSPENDIDO</span>
                 }
               </td>
-              <td>{{ tenant.creado_en | date:'dd/MM/yyyy' }}</td>
               <td>
                 @if (tenant.esta_activo) {
                   <button class="btn-outline-red" (click)="toggleStatus(tenant)">Suspender</button>

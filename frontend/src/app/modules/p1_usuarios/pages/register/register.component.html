@@ -106,6 +106,26 @@
               </label>
 
             </div>
+
+            @if (form.get('plan')?.value !== 'gratis') {
+              <div class="payment-method-section mt-4 slide-down" style="background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.2);">
+                <label style="display:block; text-align: center; color: #00f2ff; margin-bottom: 10px;">Método de Pago</label>
+                <div class="role-options">
+                  <label class="role-option" [class.selected]="form.get('metodo_pago')?.value === 'tarjeta'">
+                    <input type="radio" formControlName="metodo_pago" value="tarjeta" class="hidden-radio">
+                    <div class="role-info" style="text-align: center;">
+                      <span class="role-label">💳 Tarjeta de Crédito/Débito</span>
+                    </div>
+                  </label>
+                  <label class="role-option" [class.selected]="form.get('metodo_pago')?.value === 'qr'">
+                    <input type="radio" formControlName="metodo_pago" value="qr" class="hidden-radio">
+                    <div class="role-info" style="text-align: center;">
+                      <span class="role-label">📱 Código QR (Stripe)</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            }
           </div>
         }
 

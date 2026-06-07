@@ -70,6 +70,16 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario no encontrado o inactivo",
         )
+        
+    if user.tenant_id:
+        from app.modules.p7_seguridad_multitenant.models import Tenant
+        tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+        if tenant and not tenant.esta_activo:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tu cuenta de empresa ha sido suspendida. Contacta a soporte para regularizar tu suscripción.",
+            )
+            
     return user
 
 

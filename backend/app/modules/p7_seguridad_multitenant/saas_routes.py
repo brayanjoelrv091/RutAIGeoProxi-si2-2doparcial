@@ -20,6 +20,11 @@ class TenantOut(BaseModel):
     esta_activo: bool
     plan: str
     creado_en: datetime
+    fecha_fin_plan: datetime | None = None
+    estado_pago: str = "gratis"
+    metodo_pago: str = "ninguno"
+    monto_pago: int = 0
+    admin_nombre: str | None = None
     
     class Config:
         from_attributes = True
@@ -30,18 +35,47 @@ def require_superadmin(current: Usuario = Depends(require_roles("admin"))):
         raise HTTPException(status_code=403, detail="Acceso denegado. Se requieren privilegios de SuperAdmin del sistema.")
     return current
 
+from fastapi import BackgroundTasks
+
+async def notify_tenant_users_bg(tenant_id: int):
+    from app.shared.database import SessionLocal
+    from app.modules.p1_usuarios.models import Usuario
+    from app.shared.websocket_manager import manager
+    db = SessionLocal()
+    try:
+        users = db.query(Usuario).filter(Usuario.tenant_id == tenant_id).all()
+        payload = {
+            "type": "tenant_suspended",
+            "titulo": "Cuenta Suspendida",
+            "mensaje": "Su cuenta ha sido suspendida debido a que la suscripción de su empresa expiró o no se pagó a tiempo.",
+        }
+        for u in users:
+            await manager.send_personal_message(payload, str(u.id))
+    finally:
+        db.close()
+
 @router.get("/tenants", response_model=List[TenantOut], summary="Listar todos los tenants (Solo SuperAdmin)")
 def list_all_tenants(
     db: Session = Depends(get_db),
     _current: Usuario = Depends(require_superadmin)
 ):
     """Obtiene la lista de todas las suscripciones (empresas) registradas en el sistema."""
-    return db.query(Tenant).order_by(Tenant.creado_en.desc()).all()
+    from app.modules.p7_seguridad_multitenant.models import TenantMembership
+    tenants = db.query(Tenant).order_by(Tenant.creado_en.desc()).all()
+    for t in tenants:
+        membership = db.query(TenantMembership).filter(TenantMembership.tenant_id == t.id, TenantMembership.rol_en_tenant == "owner").first()
+        if membership:
+            owner = db.query(Usuario).filter(Usuario.id == membership.usuario_id).first()
+            setattr(t, "admin_nombre", owner.nombre if owner else "Desconocido")
+        else:
+            setattr(t, "admin_nombre", "Desconocido")
+    return tenants
 
 @router.patch("/tenants/{tenant_id}/status", response_model=TenantOut, summary="Activar o suspender un tenant (Solo SuperAdmin)")
 def update_tenant_status(
     tenant_id: int,
     payload: TenantStatusUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _current: Usuario = Depends(require_superadmin)
 ):
@@ -50,7 +84,13 @@ def update_tenant_status(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
     
+    was_active = tenant.esta_activo
     tenant.esta_activo = payload.esta_activo
     db.commit()
     db.refresh(tenant)
+    
+    # Notify all users if suspended
+    if was_active and not payload.esta_activo:
+        background_tasks.add_task(notify_tenant_users_bg, tenant_id)
+        
     return tenant

@@ -55,14 +55,16 @@ admin_dep = require_roles("admin")
 # AUTH  (CU1 · Login, CU2 · Logout, CU3 · Registro, CU4 · Recuperar)
 # ═══════════════════════════════════════════════════════════════════════
 
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
+
 @auth_router.post(
     "/register",
     response_model=UserOut,
     status_code=status.HTTP_201_CREATED,
     summary="CU3 · Registrar usuario",
 )
-def register(payload: UserCreate, db: Session = Depends(get_db)):
-    return AuthService.register(db, payload)
+def register(payload: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return AuthService.register(db, payload, background_tasks)
 
 
 @auth_router.post(

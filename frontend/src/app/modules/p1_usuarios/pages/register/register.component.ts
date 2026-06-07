@@ -39,7 +39,8 @@ export class RegisterComponent {
     ]],
     rol: ['cliente', Validators.required],
     tenant_name: [''],
-    plan: ['']
+    plan: [''],
+    metodo_pago: ['tarjeta']
   });
 
   ngOnInit() {
@@ -62,10 +63,15 @@ export class RegisterComponent {
     
     const vals = this.form.getRawValue();
     if (vals.rol === 'admin' && vals.plan && vals.plan !== 'gratis') {
-      // Require Stripe payment for paid plans
-      this.stripePlanName = vals.plan;
-      this.stripeAmount = vals.plan === 'profesional' ? 29 : 99;
-      this.showStripeModal = true;
+      if (vals.metodo_pago === 'qr') {
+        this.stripePlanName = vals.plan;
+        this.stripeAmount = vals.plan === 'profesional' ? 29 : 99;
+        this.showStripeModal = true;
+      } else {
+        // Mocking credit card processing for Tarjeta
+        this.loading = true;
+        setTimeout(() => this.executeRegistration(), 1500);
+      }
     } else {
       this.executeRegistration();
     }
@@ -79,11 +85,12 @@ export class RegisterComponent {
     const rol = vals.rol!;
     const tenant_name = vals.tenant_name || undefined;
     const plan = vals.plan || undefined;
+    const metodo_pago = vals.metodo_pago || undefined;
 
     this.error = '';
     this.ok = false;
     this.loading = true;
-    this.auth.register(name, email, password, rol, tenant_name, plan).subscribe({
+    this.auth.register(name, email, password, rol, tenant_name, plan, metodo_pago).subscribe({
       next: () => {
         this.ok = true;
         this.loading = false;

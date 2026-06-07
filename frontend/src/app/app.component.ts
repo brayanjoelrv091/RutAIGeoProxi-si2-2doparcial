@@ -96,6 +96,12 @@ export class AppComponent implements OnInit {
         const userId = parseInt(payload.sub, 10);
         if (userId) {
           this.ws.connectNotifications(userId).subscribe((notif) => {
+            if (notif.type === 'tenant_suspended') {
+              alert(notif.mensaje || 'Su cuenta ha sido suspendida debido a que la suscripción expiró o no se pagó a tiempo.');
+              this.logout();
+              return;
+            }
+
             this.notifications.unshift(notif);
             this.unreadCount++;
             
