@@ -218,7 +218,7 @@ export class RegisterWorkshopComponent implements OnInit, AfterViewInit, OnDestr
     this.wsSvc.getMyProfile().subscribe({
       next: (profile) => {
         if (profile) {
-          const role = this.authSvc.currentUser()?.rol;
+          const role = this.authSvc.getUserRole();
           if ((profile as any).estado_registro === 'completado') {
             if (role === 'admin') {
                // Admin can create multiple workshops, so we don't redirect them
