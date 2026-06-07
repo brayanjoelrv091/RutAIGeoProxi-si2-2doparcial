@@ -257,6 +257,30 @@ def bootstrap_superadmin():
     finally:
         db.close()
 
+@app.get("/api/v1/fix-tenants", tags=["Mantenimiento"])
+def fix_tenants():
+    """Asigna tenant_id a los administradores que quedaron sin tenant_id por el bug anterior."""
+    from app.shared.database import SessionLocal
+    from app.modules.p1_usuarios.models import Usuario
+    from app.modules.p7_seguridad_multitenant.models import TenantMembership
+    db = SessionLocal()
+    try:
+        # Buscar todas las membresias owner
+        memberships = db.query(TenantMembership).filter(TenantMembership.rol_en_tenant == "owner").all()
+        arreglados = 0
+        for m in memberships:
+            user = db.query(Usuario).filter(Usuario.id == m.usuario_id).first()
+            if user and user.tenant_id is None:
+                user.tenant_id = m.tenant_id
+                arreglados += 1
+        db.commit()
+        return {"status": "exito", "mensaje": f"Se arreglaron {arreglados} usuarios asignandoles su tenant correcto."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
+    finally:
+        db.close()
+
 @app.get("/", tags=["Sistema"])
 @app.head("/", tags=["Sistema"])
 def root():

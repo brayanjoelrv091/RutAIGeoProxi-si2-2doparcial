@@ -10,6 +10,7 @@ interface User {
   email: string;
   rol: string;
   permisos: any;
+  tenant_id?: number | null;
 }
 
 interface Bitacora {

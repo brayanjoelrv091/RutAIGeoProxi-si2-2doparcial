@@ -49,6 +49,9 @@
                       <option [value]="r">{{ r | titlecase }}</option>
                     }
                   </select>
+                  @if (user.rol === 'admin' && !user.tenant_id) {
+                    <span class="badge" style="background: #ff007f; margin-left: 8px;">SUPERADMIN</span>
+                  }
                 </td>
                 <td>
                   <button class="btn-outline-cyan" (click)="openPermissions(user)">Configurar JSON</button>
