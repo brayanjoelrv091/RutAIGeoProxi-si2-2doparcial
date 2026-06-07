@@ -248,12 +248,5 @@
     }
   </main>
 
-  @if (showStripeModal) {
-    <app-stripe-qr-modal
-      [planName]="upgradePlanName"
-      [amount]="upgradeAmount"
-      (paymentSuccess)="onUpgradePaymentSuccess()"
-      (cancel)="onUpgradePaymentCancel()">
-    </app-stripe-qr-modal>
-  }
+
 </div>

@@ -60,22 +60,48 @@ class TenantService:
     def upgrade_tenant(db: Session, tenant_id: int, nuevo_plan: str) -> Tenant:
         tenant = TenantService.get_tenant_by_id(db, tenant_id)
         
-        # Simular procesamiento de Stripe
-        from app.modules.p5_pagos.stripe_gateway import StripeGateway
-        
         precios = {
             "profesional": 29.00,
             "empresarial": 99.00
         }
         
-        if nuevo_plan in precios:
+        from app.shared.config import settings
+        setattr(tenant, "checkout_url", None)
+        
+        if nuevo_plan in precios and settings.STRIPE_SECRET_KEY:
             monto = precios[nuevo_plan]
-            # Simulamos el cargo
-            resultado = StripeGateway.process_payment(amount=monto, currency="usd")
-            if not resultado.get("success"):
+            try:
+                import stripe
+                stripe.api_key = settings.STRIPE_SECRET_KEY
+                
+                price_data = {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": f"Suscripción {nuevo_plan.capitalize()} - {tenant.nombre}",
+                    },
+                    "unit_amount": int(monto * 100),
+                }
+                
+                frontend_url = "https://rutaigeoproxi.vercel.app" if not settings.DEBUG_RESET_TOKEN else "http://localhost:4200"
+                
+                session = stripe.checkout.Session.create(
+                    line_items=[{
+                        'price_data': price_data,
+                        'quantity': 1,
+                    }],
+                    mode='payment',
+                    success_url=f"{frontend_url}/dashboard?payment_success=true",
+                    cancel_url=f"{frontend_url}/dashboard?payment_cancelled=true",
+                    client_reference_id=str(tenant.id)
+                )
+                
+                tenant.checkout_url = session.url
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Stripe Error in Upgrade: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                    detail=f"Pago por Stripe fallido: {resultado.get('raw_response')}"
+                    detail=f"Error al generar sesión de Stripe: {e}"
                 )
                 
         tenant.plan = nuevo_plan

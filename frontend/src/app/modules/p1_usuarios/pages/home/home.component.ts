@@ -4,12 +4,11 @@ import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
 import { NgClass, UpperCasePipe } from '@angular/common';
 import { WorkshopService } from '../../../p3_talleres/workshop.service';
-import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe, StripeQrModalComponent],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -133,31 +132,22 @@ export class HomeComponent implements OnInit {
   }
 
   // --- SaaS Upgrade Logic ---
-  showStripeModal = false;
-  upgradePlanName = '';
-  upgradeAmount = 0;
-
   openUpgradeModal(plan: string) {
-    this.upgradePlanName = plan;
-    this.upgradeAmount = plan === 'profesional' ? 29 : 99;
-    this.showStripeModal = true;
-  }
-
-  onUpgradePaymentSuccess() {
-    this.showStripeModal = false;
-    this.auth.upgradeTenantPlan(this.upgradePlanName).subscribe({
-      next: () => {
-        alert('¡Plan actualizado exitosamente en el servidor!');
-        this.refresh();
+    if (!confirm(`¿Está seguro de querer cambiar al plan ${plan.toUpperCase()}? Será redirigido a Stripe para completar el pago.`)) return;
+    
+    this.auth.upgradeTenantPlan(plan).subscribe({
+      next: (res: any) => {
+        if (res && res.checkout_url) {
+          window.location.href = res.checkout_url;
+        } else {
+          alert('¡Plan actualizado exitosamente en el servidor!');
+          this.refresh();
+        }
       },
       error: (e) => {
-        alert('Error al actualizar plan: ' + (e.error?.detail || 'Desconocido'));
+        alert('Error al generar sesión de pago: ' + (e.error?.detail || 'Desconocido'));
       }
     });
-  }
-
-  onUpgradePaymentCancel() {
-    this.showStripeModal = false;
   }
 
   logout(): void {

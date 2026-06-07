@@ -23,6 +23,11 @@ class TenantUpdate(BaseModel):
 class TenantOut(TenantBase):
     id: int
     creado_en: datetime
+    fecha_fin_plan: datetime | None = None
+    estado_pago: str | None = None
+    metodo_pago: str | None = None
+    monto_pago: float | None = None
+    checkout_url: str | None = None
 
     model_config = {"from_attributes": True}
 

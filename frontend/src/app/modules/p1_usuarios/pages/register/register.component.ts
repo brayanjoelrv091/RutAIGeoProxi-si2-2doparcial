@@ -3,12 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth.service';
 import { NgClass } from '@angular/common';
-import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass, StripeQrModalComponent],
+  imports: [ReactiveFormsModule, RouterLink, NgClass],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css',
 })
@@ -92,14 +91,5 @@ export class RegisterComponent {
         this.error = e?.error?.detail ?? 'No se pudo registrar.';
       },
     });
-  }
-
-  onPaymentSuccess() {
-    this.showStripeModal = false;
-    this.executeRegistration();
-  }
-
-  onPaymentCancel() {
-    this.showStripeModal = false;
   }
 }

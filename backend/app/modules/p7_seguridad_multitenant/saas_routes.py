@@ -40,6 +40,7 @@ from fastapi import BackgroundTasks
 async def notify_tenant_users_bg(tenant_id: int, is_suspended: bool, tenant_name: str):
     from app.shared.database import SessionLocal
     from app.modules.p1_usuarios.models import Usuario
+    from app.modules.p5_pagos.models import Notificacion
     from app.shared.websocket_manager import manager
     from app.shared.firebase_config import send_push_notification
     db = SessionLocal()
@@ -62,11 +63,21 @@ async def notify_tenant_users_bg(tenant_id: int, is_suspended: bool, tenant_name
         }
         
         for u in users:
+            # Insert into database to persist for the dropdown
+            db.add(Notificacion(
+                usuario_id=u.id,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo="push"
+            ))
+            
             # WebSocket Notification
             await manager.send_personal_message(payload, str(u.id))
             # FCM Push Notification
             if u.fcm_token:
                 send_push_notification(u.fcm_token, titulo, mensaje)
+                
+        db.commit()
     finally:
         db.close()
 
