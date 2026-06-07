@@ -44,7 +44,15 @@ export class SuperadminSaasComponent implements OnInit {
         headers: { Authorization: `Bearer ${this.auth.token}` }
       });
       if (res.ok) {
-        this.tenants = await res.json();
+        const data = await res.json();
+        this.tenants = data.map((t: Tenant) => {
+          if (t.plan === 'gratis' && !t.fecha_fin_plan) {
+            const date = new Date(t.creado_en);
+            date.setDate(date.getDate() + 30);
+            t.fecha_fin_plan = date.toISOString();
+          }
+          return t;
+        });
       } else {
         this.error = 'No se pudieron cargar los tenants.';
       }

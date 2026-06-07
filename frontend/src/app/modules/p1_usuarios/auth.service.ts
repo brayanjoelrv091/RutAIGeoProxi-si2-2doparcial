@@ -125,7 +125,7 @@ export class AuthService {
     return this.http.delete(`${this.base}/me/vehicles/${id}`);
   }
 
-  upgradeTenantPlan(nuevo_plan: string): Observable<unknown> {
-    return this.http.post(`${this.base}/tenants/me/upgrade`, { nuevo_plan });
+  upgradeTenantPlan(nuevo_plan: string, metodo_pago?: string): Observable<unknown> {
+    return this.http.post(`${this.base}/tenants/me/upgrade`, { nuevo_plan, metodo_pago });
   }
 }

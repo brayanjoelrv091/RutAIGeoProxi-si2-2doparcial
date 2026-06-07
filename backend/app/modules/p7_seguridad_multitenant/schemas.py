@@ -45,3 +45,4 @@ class MembershipOut(BaseModel):
 
 class TenantUpgradeRequest(BaseModel):
     nuevo_plan: str # "profesional" o "empresarial"
+    metodo_pago: str | None = None

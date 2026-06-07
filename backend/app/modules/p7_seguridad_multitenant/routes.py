@@ -70,7 +70,7 @@ def upgrade_my_tenant(
     if not current_user.tenant_id:
         raise HTTPException(status_code=400, detail="El usuario no tiene una red de talleres asignada.")
         
-    return TenantService.upgrade_tenant(db, current_user.tenant_id, schema.nuevo_plan)
+    return TenantService.upgrade_tenant(db, current_user.tenant_id, schema.nuevo_plan, schema.metodo_pago)
 
 
 @router.post("/{tenant_id}/members", response_model=MembershipOut, summary="Agregar miembro al Tenant")

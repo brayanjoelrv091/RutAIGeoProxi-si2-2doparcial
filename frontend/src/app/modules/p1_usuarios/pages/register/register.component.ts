@@ -2,12 +2,13 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../auth.service';
-import { NgClass } from '@angular/common';
+import { NgClass, UpperCasePipe } from '@angular/common';
+import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe, StripeQrModalComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css',
 })
@@ -57,9 +58,21 @@ export class RegisterComponent {
     });
   }
 
+  showStripeModal = false;
+  stripePlanName = '';
+  stripeAmount = 0;
+
   submit(): void {
     if (this.form.invalid) return;
-    this.executeRegistration();
+    
+    const vals = this.form.getRawValue();
+    if (vals.plan !== 'gratis' && vals.metodo_pago === 'qr') {
+      this.stripePlanName = vals.plan!;
+      this.stripeAmount = vals.plan === 'profesional' ? 29 : 99;
+      this.showStripeModal = true;
+    } else {
+      this.executeRegistration();
+    }
   }
 
   executeRegistration(): void {
@@ -91,5 +104,14 @@ export class RegisterComponent {
         this.error = e?.error?.detail ?? 'No se pudo registrar.';
       },
     });
+  }
+
+  onPaymentSuccess() {
+    this.showStripeModal = false;
+    this.executeRegistration();
+  }
+
+  onPaymentCancel() {
+    this.showStripeModal = false;
   }
 }

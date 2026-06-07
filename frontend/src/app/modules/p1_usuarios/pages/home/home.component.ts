@@ -4,11 +4,12 @@ import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
 import { NgClass, UpperCasePipe } from '@angular/common';
 import { WorkshopService } from '../../../p3_talleres/workshop.service';
+import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe, StripeQrModalComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -132,10 +133,39 @@ export class HomeComponent implements OnInit {
   }
 
   // --- SaaS Upgrade Logic ---
+  showPaymentMethodModal = false;
+  showStripeModal = false;
+  upgradePlanName = '';
+  upgradeAmount = 0;
+
   openUpgradeModal(plan: string) {
-    if (!confirm(`¿Está seguro de querer cambiar al plan ${plan.toUpperCase()}? Será redirigido a Stripe para completar el pago.`)) return;
+    this.upgradePlanName = plan;
+    this.upgradeAmount = plan === 'profesional' ? 29 : 99;
+    this.showPaymentMethodModal = true;
+  }
+
+  selectPaymentMethod(method: 'qr' | 'tarjeta') {
+    this.showPaymentMethodModal = false;
     
-    this.auth.upgradeTenantPlan(plan).subscribe({
+    if (method === 'qr') {
+      this.showStripeModal = true;
+    } else {
+      if (!confirm(`¿Está seguro de querer cambiar al plan ${this.upgradePlanName.toUpperCase()} con Tarjeta? Será redirigido a Stripe.`)) return;
+      this.executeUpgrade('tarjeta');
+    }
+  }
+
+  onUpgradePaymentSuccess() {
+    this.showStripeModal = false;
+    this.executeUpgrade('qr');
+  }
+
+  onUpgradePaymentCancel() {
+    this.showStripeModal = false;
+  }
+
+  executeUpgrade(metodo_pago: string) {
+    this.auth.upgradeTenantPlan(this.upgradePlanName, metodo_pago).subscribe({
       next: (res: any) => {
         if (res && res.checkout_url) {
           window.location.href = res.checkout_url;
@@ -145,7 +175,7 @@ export class HomeComponent implements OnInit {
         }
       },
       error: (e) => {
-        alert('Error al generar sesión de pago: ' + (e.error?.detail || 'Desconocido'));
+        alert('Error al generar sesión de pago o actualizar plan: ' + (e.error?.detail || 'Desconocido'));
       }
     });
   }

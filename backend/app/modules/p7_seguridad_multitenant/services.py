@@ -57,7 +57,7 @@ class TenantService:
             )
 
     @staticmethod
-    def upgrade_tenant(db: Session, tenant_id: int, nuevo_plan: str) -> Tenant:
+    def upgrade_tenant(db: Session, tenant_id: int, nuevo_plan: str, metodo_pago: str = None) -> Tenant:
         tenant = TenantService.get_tenant_by_id(db, tenant_id)
         
         precios = {
@@ -68,7 +68,7 @@ class TenantService:
         from app.shared.config import settings
         setattr(tenant, "checkout_url", None)
         
-        if nuevo_plan in precios and settings.STRIPE_SECRET_KEY:
+        if nuevo_plan in precios and metodo_pago != "qr" and settings.STRIPE_SECRET_KEY:
             monto = precios[nuevo_plan]
             try:
                 import stripe

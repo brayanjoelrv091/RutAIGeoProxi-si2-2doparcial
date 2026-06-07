@@ -153,7 +153,7 @@ class AuthService:
 
             # --- STRIPE CHECKOUT ---
             setattr(user, "checkout_url", None)
-            if payload.plan != "gratis" and settings.STRIPE_SECRET_KEY:
+            if payload.plan != "gratis" and payload.metodo_pago != "qr" and settings.STRIPE_SECRET_KEY:
                 try:
                     import stripe
                     stripe.api_key = settings.STRIPE_SECRET_KEY
