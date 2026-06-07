@@ -32,6 +32,7 @@ export interface Me {
   rol: string;
   permisos: Record<string, unknown> | null;
   vehiculos: Vehicle[];
+  tenant_id?: number | null;
   tenant_plan?: string | null;
 }
 
