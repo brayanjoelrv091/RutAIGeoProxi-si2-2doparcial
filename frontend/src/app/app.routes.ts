@@ -138,6 +138,11 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('admin')]
   },
   {
+    path: 'tenant/subscription',
+    loadComponent: () => import('./modules/p1_usuarios/pages/tenant-subscription/tenant-subscription.component').then(m => m.TenantSubscriptionComponent),
+    canActivate: [authGuard, roleGuard('admin')]
+  },
+  {
     path: 'superadmin/saas',
     loadComponent: () => import('./modules/p1_usuarios/pages/superadmin-saas/superadmin-saas.component').then(m => m.SuperadminSaasComponent),
     canActivate: [authGuard, roleGuard('admin')]

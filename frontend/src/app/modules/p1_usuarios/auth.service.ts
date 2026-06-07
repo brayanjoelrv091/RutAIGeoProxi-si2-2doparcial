@@ -128,4 +128,8 @@ export class AuthService {
   upgradeTenantPlan(nuevo_plan: string, metodo_pago?: string): Observable<unknown> {
     return this.http.post(`${this.base}/tenants/me/upgrade`, { nuevo_plan, metodo_pago });
   }
+
+  confirmUpgradeTenant(nuevo_plan: string, metodo_pago: string, monto: number): Observable<unknown> {
+    return this.http.post(`${this.base}/tenants/me/upgrade/confirm`, { nuevo_plan, metodo_pago, monto });
+  }
 }

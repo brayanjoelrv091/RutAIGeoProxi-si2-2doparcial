@@ -13,7 +13,8 @@ from app.modules.p7_seguridad_multitenant.schemas import (
     TenantOut,
     MembershipCreate,
     MembershipOut,
-    TenantUpgradeRequest
+    TenantUpgradeRequest,
+    TenantUpgradeConfirmRequest
 )
 from app.modules.p7_seguridad_multitenant.services import TenantService
 
@@ -72,6 +73,25 @@ def upgrade_my_tenant(
         
     return TenantService.upgrade_tenant(db, current_user.tenant_id, schema.nuevo_plan, schema.metodo_pago)
 
+
+@router.post("/me/upgrade/confirm", response_model=TenantOut, summary="Confirmar mejora de plan de SaaS y enviar notificación")
+def confirm_my_tenant_upgrade(
+    schema: TenantUpgradeConfirmRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(admin_dep),
+):
+    """Efectiviza el upgrade de plan y envía notificaciones tras validar el pago."""
+    if not current_user.tenant_id:
+        raise HTTPException(status_code=400, detail="El usuario no tiene una red de talleres asignada.")
+        
+    return TenantService.confirm_upgrade_tenant(
+        db, 
+        current_user.tenant_id, 
+        current_user.id,
+        schema.nuevo_plan, 
+        schema.metodo_pago,
+        schema.monto
+    )
 
 @router.post("/{tenant_id}/members", response_model=MembershipOut, summary="Agregar miembro al Tenant")
 def add_member(

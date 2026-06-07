@@ -104,9 +104,82 @@ class TenantService:
                     detail=f"Error al generar sesión de Stripe: {e}"
                 )
                 
+        # NOTA: Ya no actualizamos tenant.plan aquí. Eso sucederá en la confirmación.
+        # Solo retornamos el tenant para que devuelva la URL
+        db.commit()
+        return tenant
+
+    @staticmethod
+    def confirm_upgrade_tenant(db: Session, tenant_id: int, usuario_id: int, nuevo_plan: str, metodo_pago: str, monto: float) -> Tenant:
+        from app.modules.p5_pagos.models import Notificacion
+        from app.shared.firebase_config import send_push_notification
+        from app.shared.websocket_manager import manager
+        from datetime import datetime
+        import asyncio
+
+        tenant = TenantService.get_tenant_by_id(db, tenant_id)
+        
+        # Validar el plan
+        precios = {
+            "profesional": 29.00,
+            "empresarial": 99.00,
+            "gratis": 0.00
+        }
+        if nuevo_plan not in precios:
+            raise HTTPException(status_code=400, detail="Plan no válido")
+
         tenant.plan = nuevo_plan
+        tenant.checkout_url = None
         db.commit()
         db.refresh(tenant)
+
+        # Crear Notificación
+        mensaje_pago = "Tarjeta de crédito (Stripe)" if metodo_pago == "tarjeta" else "Transferencia QR"
+        fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        mensaje = (
+            f"Su plan ha sido cambiado exitosamente. "
+            f"Ahora es parte de nuestro plan {nuevo_plan.upper()}. "
+            f"Monto pagado: ${monto}. "
+            f"Pago realizado por: {mensaje_pago}. "
+            f"Fecha y Hora: {fecha_hora}"
+        )
+
+        nueva_notif = Notificacion(
+            usuario_id=usuario_id,
+            titulo="Suscripción Actualizada ✅",
+            mensaje=mensaje,
+            tipo="info",
+            leido=False
+        )
+        db.add(nueva_notif)
+        db.commit()
+
+        # Enviar Notificación Push (Si hay token)
+        from app.modules.p1_usuarios.models import Usuario
+        usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
+        if usuario and usuario.fcm_token:
+            send_push_notification(
+                token=usuario.fcm_token,
+                title="Suscripción Actualizada ✅",
+                body=mensaje,
+                data={"type": "subscription_update", "plan": nuevo_plan}
+            )
+
+        # Enviar Notificación WebSocket
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(manager.send_personal_message(usuario_id, {
+                    "type": "notification",
+                    "title": "Suscripción Actualizada ✅",
+                    "message": mensaje,
+                    "plan": nuevo_plan
+                }))
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error sending WS notification: {e}")
+
         return tenant
 
     @staticmethod

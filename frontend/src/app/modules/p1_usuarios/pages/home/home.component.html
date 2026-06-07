@@ -78,21 +78,9 @@
                     </div>
                   </div>
 
-                  <!-- Botones de Upgrade de Plan -->
+                  <!-- Botón de Gestionar Suscripción -->
                   <div class="upgrade-actions mt-3" style="text-align: center;">
-                    @if (me.tenant_plan === 'gratis' || !me.tenant_plan) {
-                      <button class="btn-premium small" style="margin-right: 10px;" (click)="openUpgradeModal('profesional')">
-                        ⭐ Subir a Profesional ($29/mes)
-                      </button>
-                      <button class="btn-premium small" style="border-color: #ff6b6b; color: #ff6b6b;" (click)="openUpgradeModal('empresarial')">
-                        🚀 Subir a Empresarial ($99/mes)
-                      </button>
-                    }
-                    @if (me.tenant_plan === 'profesional') {
-                      <button class="btn-premium small" style="border-color: #ff6b6b; color: #ff6b6b;" (click)="openUpgradeModal('empresarial')">
-                        🚀 Subir a Empresarial ($99/mes)
-                      </button>
-                    }
+                    <a routerLink="/tenant/subscription" class="btn-premium small" style="text-decoration: none;">⚙️ Gestionar Suscripción</a>
                   </div>
                 </div>
               }
@@ -250,34 +238,3 @@
 
 </div>
 
-@if (showPaymentMethodModal) {
-  <div class="modal-overlay">
-    <div class="modal-container text-center p-8 bg-gray-800 rounded-xl text-white max-w-sm w-full relative border border-gray-700">
-      <button class="absolute top-4 right-4 text-gray-400 hover:text-white" (click)="showPaymentMethodModal = false">✕</button>
-      <h3 class="text-xl font-bold mb-6 text-cyan-400">Selecciona el Método de Pago</h3>
-      
-      <div class="flex flex-col gap-4">
-        <button 
-          class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-lg w-full transition-all duration-300 shadow-[0_0_15px_rgba(79,70,229,0.4)] hover:shadow-[0_0_25px_rgba(79,70,229,0.6)]"
-          (click)="selectPaymentMethod('tarjeta')">
-          💳 Pagar con Tarjeta (Stripe)
-        </button>
-        
-        <button 
-          class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-4 rounded-lg w-full transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)]"
-          (click)="selectPaymentMethod('qr')">
-          📱 Código QR (Transferencia Local)
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
-@if (showStripeModal) {
-  <app-stripe-qr-modal
-    [planName]="upgradePlanName"
-    [amount]="upgradeAmount"
-    (paymentSuccess)="onUpgradePaymentSuccess()"
-    (cancel)="onUpgradePaymentCancel()">
-  </app-stripe-qr-modal>
-}

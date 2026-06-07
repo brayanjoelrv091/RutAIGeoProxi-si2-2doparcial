@@ -1,0 +1,119 @@
+<div class="tech-bg"></div>
+
+<div class="hero-container">
+  <header class="hero-header" style="margin-bottom: 2rem;">
+    <h1 class="neon-title" style="font-size: 2.5rem;">Gestión de Suscripción</h1>
+    <p class="subtitle">Administra tu plan SaaS para la red de talleres</p>
+    <div class="auth-actions">
+      <button type="button" class="btn-premium small" routerLink="/home">← Volver al Perfil</button>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="text-center"><p style="color: #00f2ff;">Cargando información...</p></div>
+  } @else {
+    <main class="content-fade-in" style="max-width: 1000px; margin: 0 auto;">
+      
+      <!-- Current Plan Summary -->
+      <section class="glass-card mb-4" style="border: 1px solid var(--neon-cyan);">
+        <h2 class="tech-font cyan-text"><i class="fas fa-crown"></i> Tu Plan Actual: <span style="color: #fff;">{{ (me?.tenant_plan || 'gratis') | uppercase }}</span></h2>
+        <p style="color: #aaa; margin-top: 10px;">
+          @if (me?.tenant_plan === 'empresarial') {
+            Disfrutas del máximo nivel de servicio, sin límites.
+          } @else if (me?.tenant_plan === 'profesional') {
+            Estás en el plan Profesional. Puedes expandir tus operaciones hasta 3 talleres.
+          } @else {
+            Estás utilizando el nivel gratuito básico (1 taller).
+          }
+        </p>
+      </section>
+
+      <!-- Pricing Plans -->
+      <div class="pricing-cards">
+        
+        <!-- Plan Gratis -->
+        <div class="pricing-card" [class.active-plan]="me?.tenant_plan === 'gratis' || !me?.tenant_plan">
+          <div class="card-header">Gratis</div>
+          <div class="card-price">$0<span>/mes</span></div>
+          <ul class="card-features">
+            <li>✔️ 1 Taller (Sucursal)</li>
+            <li>✔️ 2 Técnicos Máximo</li>
+            <li>✔️ Tracking Básico</li>
+          </ul>
+          @if (me?.tenant_plan === 'gratis' || !me?.tenant_plan) {
+            <button class="btn-premium small disabled" disabled style="display: block; width: 100%; margin-top: 1rem; opacity: 0.5;">PLAN ACTUAL</button>
+          } @else {
+            <button class="btn-premium small" style="display: block; width: 100%; margin-top: 1rem; border-color: #555; color: #ccc;" disabled>NO DISPONIBLE PARA DOWNGRADE</button>
+          }
+        </div>
+
+        <!-- Plan Profesional -->
+        <div class="pricing-card" [class.active-plan]="me?.tenant_plan === 'profesional'" style="border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+          <div class="card-header pro">Profesional</div>
+          <div class="card-price">$29<span>/mes</span></div>
+          <ul class="card-features">
+            <li>✔️ Hasta 3 Talleres</li>
+            <li>✔️ Técnicos Ilimitados</li>
+            <li>✔️ IA y Analíticas</li>
+          </ul>
+          @if (me?.tenant_plan === 'profesional') {
+            <button class="btn-premium small disabled" disabled style="display: block; width: 100%; margin-top: 1rem; opacity: 0.5;">PLAN ACTUAL</button>
+          } @else if (me?.tenant_plan === 'empresarial') {
+            <button class="btn-premium small" style="display: block; width: 100%; margin-top: 1rem; border-color: #555; color: #ccc;" disabled>NO DISPONIBLE</button>
+          } @else {
+            <button class="btn-premium small" style="display: block; width: 100%; margin-top: 1rem;" (click)="openUpgradeModal('profesional')">ELEGIR PRO ($29)</button>
+          }
+        </div>
+
+        <!-- Plan Empresarial -->
+        <div class="pricing-card" [class.active-plan]="me?.tenant_plan === 'empresarial'">
+          <div class="card-header ent">Empresarial</div>
+          <div class="card-price">$99<span>/mes</span></div>
+          <ul class="card-features">
+            <li>✔️ Talleres Ilimitados</li>
+            <li>✔️ Usuarios Ilimitados</li>
+            <li>✔️ API y Soporte 24/7</li>
+          </ul>
+          @if (me?.tenant_plan === 'empresarial') {
+            <button class="btn-premium small disabled" disabled style="display: block; width: 100%; margin-top: 1rem; opacity: 0.5;">PLAN ACTUAL</button>
+          } @else {
+            <button class="btn-premium small" style="display: block; width: 100%; margin-top: 1rem; border-color: #ff6b6b; color: #ff6b6b;" (click)="openUpgradeModal('empresarial')">ELEGIR EMPRESARIAL ($99)</button>
+          }
+        </div>
+
+      </div>
+    </main>
+  }
+</div>
+
+@if (showPaymentMethodModal) {
+  <div class="modal-overlay">
+    <div class="modal-container text-center p-8 bg-gray-800 rounded-xl text-white max-w-sm w-full relative border border-gray-700">
+      <button class="absolute top-4 right-4 text-gray-400 hover:text-white" (click)="showPaymentMethodModal = false" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+      <h3 class="text-xl font-bold mb-6 text-cyan-400" style="color: var(--neon-cyan); margin-bottom: 2rem;">Selecciona el Método de Pago</h3>
+      
+      <div class="flex flex-col gap-4" style="display: flex; flex-direction: column; gap: 1rem;">
+        <button 
+          class="btn-premium" style="width: 100%; background: linear-gradient(135deg, #4f46e5, #3b82f6);"
+          (click)="selectPaymentMethod('tarjeta')">
+          💳 Pagar con Tarjeta (Stripe)
+        </button>
+        
+        <button 
+          class="btn-premium" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981;"
+          (click)="selectPaymentMethod('qr')">
+          📱 Código QR (Transferencia Local)
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showStripeModal) {
+  <app-stripe-qr-modal
+    [planName]="upgradePlanName"
+    [amount]="upgradeAmount"
+    (paymentSuccess)="onUpgradePaymentSuccess()"
+    (cancel)="onUpgradePaymentCancel()">
+  </app-stripe-qr-modal>
+}
