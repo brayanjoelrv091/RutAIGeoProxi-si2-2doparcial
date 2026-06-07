@@ -2,11 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService, Me } from '../../auth.service';
 import { StripeQrModalComponent } from '../../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
+import { UpperCasePipe } from '@angular/common';
 
 @Component({
   selector: 'app-tenant-subscription',
   standalone: true,
-  imports: [RouterLink, StripeQrModalComponent],
+  imports: [RouterLink, StripeQrModalComponent, UpperCasePipe],
   templateUrl: './tenant-subscription.component.html',
   styleUrl: './tenant-subscription.component.css'
 })
