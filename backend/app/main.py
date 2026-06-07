@@ -223,6 +223,30 @@ def patch_taller_db():
         import traceback
         return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
 
+@app.get("/api/v1/patch-saas-db", tags=["Mantenimiento"])
+def patch_saas_db():
+    """Ruta para agregar columnas de SaaS a la base de datos de Render."""
+    from app.shared.database import engine
+    from sqlalchemy import text
+    import logging
+    log = logging.getLogger(__name__)
+    
+    try:
+        queries = [
+            "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS fecha_fin_plan TIMESTAMP WITH TIME ZONE;",
+            "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS estado_pago VARCHAR(50) NOT NULL DEFAULT 'gratis';",
+            "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS metodo_pago VARCHAR(50) NOT NULL DEFAULT 'ninguno';",
+            "ALTER TABLE tenants ADD COLUMN IF NOT EXISTS monto_pago INTEGER NOT NULL DEFAULT 0;"
+        ]
+        with engine.begin() as conn:
+            for q in queries:
+                conn.execute(text(q))
+        log.info("Columnas de SaaS añadidas a tenants.")
+        return {"status": "exito", "mensaje": "Columnas SaaS añadidas con éxito."}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "detalle": str(e), "trace": traceback.format_exc()}
+
 @app.get("/api/v1/bootstrap-superadmin", tags=["Mantenimiento"])
 def bootstrap_superadmin():
     """Ruta temporal para crear o resetear el SuperAdmin."""
