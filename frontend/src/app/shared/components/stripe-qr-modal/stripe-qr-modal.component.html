@@ -1,0 +1,51 @@
+<div class="stripe-modal-overlay">
+  <div class="stripe-modal-content">
+    <button class="close-btn" (click)="close()" [disabled]="isProcessing || isSuccess">×</button>
+    
+    <div class="stripe-header">
+      <i class="fab fa-stripe fa-3x" style="color: #635bff;"></i>
+      <h3>Pago con Código QR</h3>
+    </div>
+
+    @if (!isSuccess) {
+      <div class="stripe-body">
+        <p class="plan-info">Estás suscribiéndote al plan: <strong>{{ planName | uppercase }}</strong></p>
+        <h2 class="amount-text">${{ amount }}.00 <span>USD / mes</span></h2>
+        
+        <div class="qr-container">
+          <!-- A placeholder QR code image -->
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=StripePaymentSimulation" alt="Stripe QR Code" class="qr-image" />
+          <p class="qr-hint">Escanea con tu app bancaria o billetera virtual.</p>
+        </div>
+
+        <button 
+          class="btn-stripe" 
+          (click)="simulatePayment()" 
+          [disabled]="isProcessing">
+          @if (isProcessing) {
+            <span class="spinner"></span> Procesando...
+          } @else {
+            Simular Pago Confirmado
+          }
+        </button>
+      </div>
+    } @else {
+      <div class="stripe-success">
+        <div class="success-checkmark">
+          <div class="check-icon">
+            <span class="icon-line line-tip"></span>
+            <span class="icon-line line-long"></span>
+            <div class="icon-circle"></div>
+            <div class="icon-fix"></div>
+          </div>
+        </div>
+        <h3>¡Pago Exitoso!</h3>
+        <p>Tu suscripción al plan <strong>{{ planName | uppercase }}</strong> está activa.</p>
+      </div>
+    }
+    
+    <div class="stripe-footer">
+      <i class="fas fa-lock"></i> Pagos seguros y cifrados por Stripe
+    </div>
+  </div>
+</div>

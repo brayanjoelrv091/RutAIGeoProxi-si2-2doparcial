@@ -57,6 +57,33 @@ class TenantService:
             )
 
     @staticmethod
+    def upgrade_tenant(db: Session, tenant_id: int, nuevo_plan: str) -> Tenant:
+        tenant = TenantService.get_tenant_by_id(db, tenant_id)
+        
+        # Simular procesamiento de Stripe
+        from app.modules.p5_pagos.stripe_gateway import StripeGateway
+        
+        precios = {
+            "profesional": 29.00,
+            "empresarial": 99.00
+        }
+        
+        if nuevo_plan in precios:
+            monto = precios[nuevo_plan]
+            # Simulamos el cargo
+            resultado = StripeGateway.process_payment(amount=monto, currency="usd")
+            if not resultado.get("success"):
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail=f"Pago por Stripe fallido: {resultado.get('raw_response')}"
+                )
+                
+        tenant.plan = nuevo_plan
+        db.commit()
+        db.refresh(tenant)
+        return tenant
+
+    @staticmethod
     def add_member(db: Session, tenant_id: int, schema: MembershipCreate) -> TenantMembership:
         # Validar que no exista ya
         existing = db.query(TenantMembership).filter(

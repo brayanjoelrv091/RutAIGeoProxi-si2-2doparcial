@@ -56,16 +56,43 @@
               <p><span>Correo:</span> {{ me.email }}</p>
               <p><span>Rol:</span> <span class="badge">{{ me.rol | uppercase }}</span></p>
 
+              <!-- Suscripción Widget (Solo para Admins) -->
               @if (isAdmin) {
-                <div class="saas-widget mt-2">
-                  <h3 class="tech-font cyan-text" style="font-size: 1.1rem; margin-bottom: 0.5rem;">🏢 Suscripción SaaS</h3>
-                  <div class="plan-badge">Plan Actual: <strong>{{ (me.tenant_plan || 'Básico') | uppercase }}</strong></div>
-                  <div class="usage-stats mt-1">
-                    <p style="margin: 0; font-size: 0.9rem;">
-                      <strong>Uso de Licencia:</strong> {{ adminWorkshopsCount }} de 
-                      {{ me.tenant_plan === 'gratis' ? '1' : (me.tenant_plan === 'profesional' ? '3' : '∞') }} 
-                      Talleres permitidos.
-                    </p>
+                <div class="glass-card mt-3" style="border: 1px solid var(--neon-cyan);">
+                  <h3 class="tech-font cyan-text"><i class="fas fa-crown"></i> Suscripción SaaS</h3>
+                  <div class="stats-row" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <span class="stat-label">Plan Actual:</span>
+                      <span class="stat-value highlight" style="font-size: 1.2rem; text-transform: uppercase;">
+                        {{ me.tenant_plan || 'GRATIS' }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="stat-label">Uso de Licencia:</span>
+                      <span class="stat-value highlight" style="font-size: 1.2rem;">
+                        {{ adminWorkshopsCount }}
+                        @if (me.tenant_plan === 'gratis' || !me.tenant_plan) { de 1 }
+                        @if (me.tenant_plan === 'profesional') { de 3 }
+                        @if (me.tenant_plan === 'empresarial') { (Ilimitado) }
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Botones de Upgrade de Plan -->
+                  <div class="upgrade-actions mt-3" style="text-align: center;">
+                    @if (me.tenant_plan === 'gratis' || !me.tenant_plan) {
+                      <button class="btn-premium small" style="margin-right: 10px;" (click)="openUpgradeModal('profesional')">
+                        ⭐ Subir a Profesional ($29/mes)
+                      </button>
+                      <button class="btn-premium small" style="border-color: #ff6b6b; color: #ff6b6b;" (click)="openUpgradeModal('empresarial')">
+                        🚀 Subir a Empresarial ($99/mes)
+                      </button>
+                    }
+                    @if (me.tenant_plan === 'profesional') {
+                      <button class="btn-premium small" style="border-color: #ff6b6b; color: #ff6b6b;" (click)="openUpgradeModal('empresarial')">
+                        🚀 Subir a Empresarial ($99/mes)
+                      </button>
+                    }
                   </div>
                 </div>
               }

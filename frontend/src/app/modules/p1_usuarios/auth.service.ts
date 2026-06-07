@@ -123,4 +123,8 @@ export class AuthService {
   deleteVehicle(id: number): Observable<unknown> {
     return this.http.delete(`${this.base}/me/vehicles/${id}`);
   }
+
+  upgradeTenantPlan(nuevo_plan: string): Observable<unknown> {
+    return this.http.post(`${this.base}/tenants/me/upgrade`, { nuevo_plan });
+  }
 }

@@ -2,7 +2,7 @@
 P7 — Rutas de Administración Multi-Tenant.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from app.shared.deps import get_current_user, get_db, require_roles
@@ -12,7 +12,8 @@ from app.modules.p7_seguridad_multitenant.schemas import (
     TenantUpdate,
     TenantOut,
     MembershipCreate,
-    MembershipOut
+    MembershipOut,
+    TenantUpgradeRequest
 )
 from app.modules.p7_seguridad_multitenant.services import TenantService
 
@@ -57,6 +58,19 @@ def update_tenant(
     _current: Usuario = Depends(admin_dep),
 ):
     return TenantService.update_tenant(db, tenant_id, schema)
+
+
+@router.post("/me/upgrade", response_model=TenantOut, summary="Mejorar plan de SaaS (Procesa Pago Stripe)")
+def upgrade_my_tenant(
+    schema: TenantUpgradeRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(admin_dep),
+):
+    """Realiza un upgrade de plan para la organización actual del admin."""
+    if not current_user.tenant_id:
+        raise HTTPException(status_code=400, detail="El usuario no tiene una red de talleres asignada.")
+        
+    return TenantService.upgrade_tenant(db, current_user.tenant_id, schema.nuevo_plan)
 
 
 @router.post("/{tenant_id}/members", response_model=MembershipOut, summary="Agregar miembro al Tenant")

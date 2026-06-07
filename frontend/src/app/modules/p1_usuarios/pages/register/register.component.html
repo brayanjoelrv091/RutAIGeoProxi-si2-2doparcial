@@ -188,3 +188,12 @@
 
   </div>
 </div>
+
+@if (showStripeModal) {
+  <app-stripe-qr-modal 
+    [planName]="stripePlanName" 
+    [amount]="stripeAmount"
+    (paymentSuccess)="onPaymentSuccess()"
+    (cancel)="onPaymentCancel()">
+  </app-stripe-qr-modal>
+}

@@ -37,3 +37,6 @@ class MembershipOut(BaseModel):
     rol_en_tenant: str
 
     model_config = {"from_attributes": True}
+
+class TenantUpgradeRequest(BaseModel):
+    nuevo_plan: str # "profesional" o "empresarial"

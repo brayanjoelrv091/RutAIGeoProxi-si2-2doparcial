@@ -4,11 +4,12 @@ import { AuthService, Me, Vehicle } from '../../auth.service';
 import { RouterLink } from '@angular/router';
 import { NgClass, UpperCasePipe } from '@angular/common';
 import { WorkshopService } from '../../../p3_talleres/workshop.service';
+import { StripeQrModalComponent } from '../../../shared/components/stripe-qr-modal/stripe-qr-modal.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe],
+  imports: [ReactiveFormsModule, RouterLink, NgClass, UpperCasePipe, StripeQrModalComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
 })
@@ -129,6 +130,34 @@ export class HomeComponent implements OnInit {
         this.passError = e.error?.detail || 'Error al actualizar contraseña.';
       }
     });
+  }
+
+  // --- SaaS Upgrade Logic ---
+  showStripeModal = false;
+  upgradePlanName = '';
+  upgradeAmount = 0;
+
+  openUpgradeModal(plan: string) {
+    this.upgradePlanName = plan;
+    this.upgradeAmount = plan === 'profesional' ? 29 : 99;
+    this.showStripeModal = true;
+  }
+
+  onUpgradePaymentSuccess() {
+    this.showStripeModal = false;
+    this.auth.upgradeTenantPlan(this.upgradePlanName).subscribe({
+      next: () => {
+        alert('¡Plan actualizado exitosamente en el servidor!');
+        this.refresh();
+      },
+      error: (e) => {
+        alert('Error al actualizar plan: ' + (e.error?.detail || 'Desconocido'));
+      }
+    });
+  }
+
+  onUpgradePaymentCancel() {
+    this.showStripeModal = false;
   }
 
   logout(): void {
