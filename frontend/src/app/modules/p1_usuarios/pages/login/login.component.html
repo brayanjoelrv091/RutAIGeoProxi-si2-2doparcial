@@ -27,6 +27,12 @@
         }
       </div>
 
+      @if (successMessage) {
+        <div class="success-alert">
+          {{ successMessage }}
+        </div>
+      }
+
       @if (error) {
         <p class="error-msg-box">{{ error }}</p>
       }

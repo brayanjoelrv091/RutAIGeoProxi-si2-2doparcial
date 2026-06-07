@@ -69,8 +69,8 @@ export class AuthService {
       );
   }
 
-  register(nombre: string, email: string, password: string, rol: string = 'cliente', tenant_name?: string, plan?: string, metodo_pago?: string): Observable<unknown> {
-    return this.http.post(`${this.base}/auth/register`, { nombre, email, password, rol, tenant_name, plan, metodo_pago });
+  register(nombre: string, email: string, password: string, rol: string = 'cliente', tenant_name?: string, plan?: string, metodo_pago?: string): Observable<{ checkout_url?: string; [key: string]: any }> {
+    return this.http.post<{ checkout_url?: string; [key: string]: any }>(`${this.base}/auth/register`, { nombre, email, password, rol, tenant_name, plan, metodo_pago });
   }
 
   logout(): void {

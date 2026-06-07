@@ -137,6 +137,9 @@ class UserOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class UserRegisterOut(UserOut):
+    checkout_url: str | None = None
+
 
 class MeResponse(UserOut):
     vehiculos: list[VehicleOut] = Field(default_factory=list)

@@ -142,6 +142,40 @@ class AuthService:
             if background_tasks:
                 background_tasks.add_task(notify_superadmins_bg, payload.plan, user.nombre)
 
+            # --- STRIPE CHECKOUT ---
+            setattr(user, "checkout_url", None)
+            if payload.plan != "gratis" and settings.STRIPE_SECRET_KEY:
+                try:
+                    import stripe
+                    stripe.api_key = settings.STRIPE_SECRET_KEY
+                    
+                    price_data = {
+                        "currency": "usd",
+                        "product_data": {
+                            "name": f"Suscripción {payload.plan.capitalize()} - {payload.tenant_name}",
+                        },
+                        "unit_amount": monto_pago * 100, # En centavos
+                    }
+                    
+                    # URLs de exito y cancelación apuntan al frontend local o cloud
+                    frontend_url = "https://rutaigeoproxi.vercel.app" if not settings.DEBUG_RESET_TOKEN else "http://localhost:4200"
+                    
+                    session = stripe.checkout.Session.create(
+                        line_items=[{
+                            'price_data': price_data,
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url=f"{frontend_url}/login?payment_success=true",
+                        cancel_url=f"{frontend_url}/login?payment_cancelled=true",
+                        client_reference_id=str(tenant.id)
+                    )
+                    setattr(user, "checkout_url", session.url)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"Stripe Error: {e}")
+                    pass # Falla silenciosamente y permite al usuario registrarse gratis
+
         return user
 
     @staticmethod

@@ -60,21 +60,7 @@ export class RegisterComponent {
 
   submit(): void {
     if (this.form.invalid) return;
-    
-    const vals = this.form.getRawValue();
-    if (vals.rol === 'admin' && vals.plan && vals.plan !== 'gratis') {
-      if (vals.metodo_pago === 'qr') {
-        this.stripePlanName = vals.plan;
-        this.stripeAmount = vals.plan === 'profesional' ? 29 : 99;
-        this.showStripeModal = true;
-      } else {
-        // Mocking credit card processing for Tarjeta
-        this.loading = true;
-        setTimeout(() => this.executeRegistration(), 1500);
-      }
-    } else {
-      this.executeRegistration();
-    }
+    this.executeRegistration();
   }
 
   executeRegistration(): void {
@@ -91,7 +77,11 @@ export class RegisterComponent {
     this.ok = false;
     this.loading = true;
     this.auth.register(name, email, password, rol, tenant_name, plan, metodo_pago).subscribe({
-      next: () => {
+      next: (res) => {
+        if (res.checkout_url) {
+          window.location.href = res.checkout_url;
+          return;
+        }
         this.ok = true;
         this.loading = false;
         this.registeredRole = rol;

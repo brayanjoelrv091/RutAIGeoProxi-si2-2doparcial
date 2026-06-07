@@ -42,8 +42,8 @@ export class AppComponent implements OnInit {
     if (this.userRole !== 'admin') return;
     this.auth.me().subscribe({
       next: (me) => {
-        // Un superadmin real NO TIENE tenant_plan y tiene rol admin
-        this.isSuperadmin = me.rol === 'admin' && !me.tenant_plan;
+        // Un superadmin real NO TIENE tenant_id y tiene rol admin
+        this.isSuperadmin = me.rol === 'admin' && me.tenant_id === null;
       }
     });
   }

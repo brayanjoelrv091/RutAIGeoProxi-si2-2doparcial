@@ -34,6 +34,7 @@ from app.modules.p1_usuarios.schemas import (
     TokenResponse,
     UserCreate,
     UserOut,
+    UserRegisterOut,
     UserProfileUpdate,
     VehicleCreate,
     VehicleOut,
@@ -59,7 +60,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status, Backgrou
 
 @auth_router.post(
     "/register",
-    response_model=UserOut,
+    response_model=UserRegisterOut,
     status_code=status.HTTP_201_CREATED,
     summary="CU3 · Registrar usuario",
 )
