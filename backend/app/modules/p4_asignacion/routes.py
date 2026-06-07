@@ -10,7 +10,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, Query, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
-from app.shared.deps import get_current_user, get_db, require_roles
+from app.shared.deps import get_current_user, get_db, require_roles, require_operational_roles
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p4_asignacion.schemas import (
     AssignmentOut,
@@ -24,7 +24,7 @@ from app.shared.websocket_manager import manager
 
 router = APIRouter(prefix="/assignments", tags=["P4 · Asignación y Logística"])
 
-admin_dep = require_roles("admin")
+admin_dep = require_operational_roles("admin")
 
 
 from fastapi import BackgroundTasks

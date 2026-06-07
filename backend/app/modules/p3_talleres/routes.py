@@ -17,7 +17,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.shared.deps import get_current_user, get_db, require_roles
+from app.shared.deps import get_current_user, get_db, require_roles, require_operational_roles
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p3_talleres.schemas import (
     ServiceHistoryOut,
@@ -48,7 +48,7 @@ router = APIRouter(prefix="/workshops", tags=["P3 · Talleres"])
 def register_workshop(
     payload: WorkshopCreate,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.register(db, current.id, payload)
 
@@ -60,7 +60,7 @@ def register_workshop(
 )
 def list_my_workshops(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.list_by_owner(db, current.id)
 
@@ -71,7 +71,7 @@ def list_my_workshops(
 )
 def get_my_workshop_profile(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.get_profile(db, current.id)
 
@@ -82,7 +82,7 @@ def get_my_workshop_profile(
 )
 def complete_workshop_registration(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.complete_registration(db, current.id)
 
@@ -93,7 +93,7 @@ def complete_workshop_registration(
 )
 def update_heartbeat(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     success = WorkshopService.record_heartbeat(db, current.id)
     if not success:
@@ -110,7 +110,7 @@ def update_heartbeat(
 def report_disconnect(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     # Enviar notificación a los técnicos
     taller = db.query(Taller).filter(Taller.usuario_propietario_id == current.id).first()
@@ -236,7 +236,7 @@ def add_technician(
     workshop_id: int,
     payload: TechnicianCreate,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.add_technician(db, workshop_id, current.id, payload)
 
@@ -266,7 +266,7 @@ def update_availability(
     technician_id: int,
     payload: TechnicianAvailabilityUpdate,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.update_technician_availability(
         db, technician_id, current.id, payload.esta_disponible
@@ -285,7 +285,7 @@ def update_availability(
 def list_requests(
     workshop_id: int,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.list_pending_requests(db, workshop_id, current.id)
 
@@ -306,7 +306,7 @@ def update_status(
     payload: ServiceStatusUpdate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.update_service_status(db, request_id, current.id, payload, background_tasks)
 
@@ -323,6 +323,6 @@ def update_status(
 def get_history(
     workshop_id: int,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("taller", "admin")),
+    current: Usuario = Depends(require_operational_roles("taller", "admin")),
 ):
     return WorkshopService.get_service_history(db, workshop_id, current.id)

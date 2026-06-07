@@ -63,6 +63,7 @@ from app.modules.p5_pagos.routes import router as payments_router
 from app.modules.p6_reportes.routes import router as reports_router
 from app.modules.p6_auditoria.routes import router as audit_router
 from app.modules.p7_seguridad_multitenant.routes import router as tenant_router
+from app.modules.p7_seguridad_multitenant.saas_routes import router as saas_router
 from app.modules.p8_realtime.routes import router as realtime_router
 from app.modules.p9_analitica.routes import router as analytics_router
 
@@ -173,6 +174,7 @@ app.include_router(reports_router)
 app.include_router(audit_router)
 # P7: Seguridad y Multi-Tenant (Ciclo 5)
 app.include_router(tenant_router)
+app.include_router(saas_router, prefix="/admin/saas")
 # P8: Conectividad Resiliente y Tiempo Real (Ciclo 4)
 app.include_router(realtime_router)
 # P9: Analítica Operacional (Ciclo 5)

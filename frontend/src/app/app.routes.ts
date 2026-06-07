@@ -137,6 +137,11 @@ export const routes: Routes = [
     loadComponent: () => import('./modules/p7_seguridad_multitenant/pages/tenant-form/tenant-form.component').then(m => m.TenantFormComponent),
     canActivate: [authGuard, roleGuard('admin')]
   },
+  {
+    path: 'superadmin/saas',
+    loadComponent: () => import('./modules/p1_usuarios/pages/superadmin-saas/superadmin-saas.component').then(m => m.SuperadminSaasComponent),
+    canActivate: [authGuard, roleGuard('admin')]
+  },
 
   // ── Explorador de Mapa ──
   {

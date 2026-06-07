@@ -26,6 +26,7 @@ export class AppComponent implements OnInit {
   notifications: any[] = [];
   unreadCount = 0;
   showNotifications = false;
+  isSuperadmin = false;
 
   ngOnInit() {
     this.isDarkTheme = localStorage.getItem('theme') !== 'light';
@@ -33,7 +34,18 @@ export class AppComponent implements OnInit {
     if (this.isLoggedIn()) {
       this.fetchNotifications();
       this.initNotifications();
+      this.checkSuperadmin();
     }
+  }
+
+  checkSuperadmin() {
+    if (this.userRole !== 'admin') return;
+    this.auth.me().subscribe({
+      next: (me) => {
+        // Un superadmin real NO TIENE tenant_plan y tiene rol admin
+        this.isSuperadmin = me.rol === 'admin' && !me.tenant_plan;
+      }
+    });
   }
 
   fetchNotifications() {

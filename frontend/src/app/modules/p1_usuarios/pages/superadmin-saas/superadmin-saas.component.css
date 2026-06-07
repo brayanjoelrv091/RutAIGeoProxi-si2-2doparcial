@@ -1,0 +1,121 @@
+.tech-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tech-header {
+  margin-bottom: 25px;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  padding-bottom: 15px;
+}
+
+.tech-header h2 {
+  color: #00ffff;
+  font-size: 2rem;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subtitle {
+  color: #a0aab5;
+  font-size: 1rem;
+}
+
+.tech-table-container {
+  overflow-x: auto;
+  background: #111b27;
+  border: 1px solid #1f2b38;
+  border-radius: 8px;
+}
+
+.tech-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tech-table th {
+  background: #1f2b38;
+  color: #00ffff;
+  text-align: left;
+  padding: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.tech-table td {
+  padding: 15px;
+  border-bottom: 1px solid #1f2b38;
+  color: #d1d5db;
+}
+
+.tech-table tr:hover td {
+  background: rgba(0, 255, 255, 0.05);
+}
+
+.tech-id {
+  color: #00ffff;
+  font-weight: bold;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.badge-basico { background: #555; color: #fff; }
+.badge-profesional { background: #007bff; color: #fff; }
+.badge-empresarial { background: #ffd700; color: #000; }
+
+.btn-outline-cyan {
+  background: transparent;
+  border: 1px solid #00ffff;
+  color: #00ffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-cyan:hover {
+  background: #00ffff;
+  color: #000;
+}
+
+.btn-outline-red {
+  background: transparent;
+  border: 1px solid #ff0055;
+  color: #ff0055;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline-red:hover {
+  background: #ff0055;
+  color: #fff;
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 50px;
+  color: #888;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 255, 255, 0.1);
+  border-left-color: #00ffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }

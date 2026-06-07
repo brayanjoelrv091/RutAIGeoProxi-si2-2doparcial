@@ -12,7 +12,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.shared.deps import get_current_user, get_db, require_roles
+from app.shared.deps import get_current_user, get_db, require_roles, require_operational_roles
 from app.modules.p1_usuarios.models import Usuario
 from app.modules.p2_incidentes.schemas import (
     ClassificationOut,
@@ -81,7 +81,7 @@ def list_my_incidents(
 )
 def list_all_incidents(
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_roles("admin")),
+    current: Usuario = Depends(require_operational_roles("admin")),
 ):
     return IncidentService.list_all(db, current.tenant_id)
 
@@ -120,6 +120,6 @@ def get_heatmap(
 async def reclassify_incident(
     incident_id: int,
     db: Session = Depends(get_db),
-    _current: Usuario = Depends(require_roles("admin")),
+    _current: Usuario = Depends(require_operational_roles("admin")),
 ):
     return await IncidentService.reclassify(db, incident_id)

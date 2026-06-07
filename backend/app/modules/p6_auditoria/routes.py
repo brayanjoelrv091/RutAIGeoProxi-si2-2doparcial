@@ -36,5 +36,10 @@ def list_audit_logs(
     
     if current.tenant_id is not None:
         query = query.join(Usuario, Bitacora.usuario_id == Usuario.id).filter(Usuario.tenant_id == current.tenant_id)
+    else:
+        # A1: Solo ve bitácoras de usuarios sin tenant (SuperAdmins) o del sistema (usuario_id = None)
+        query = query.outerjoin(Usuario, Bitacora.usuario_id == Usuario.id).filter(
+            (Usuario.tenant_id.is_(None)) | (Bitacora.usuario_id.is_(None))
+        )
         
     return query.order_by(Bitacora.creado_en.desc()).all()

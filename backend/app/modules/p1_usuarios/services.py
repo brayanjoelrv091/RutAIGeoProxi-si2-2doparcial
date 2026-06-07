@@ -162,6 +162,17 @@ class AuthService:
         # Exito: reset intentos
         user.intentos_fallidos = 0
         user.bloqueado_hasta = None
+        
+        # Auto-reparación SaaS: Si es dueño de un tenant pero su tenant_id es None (bug antiguo)
+        if user.rol == "admin" and user.tenant_id is None:
+            from app.modules.p7_seguridad_multitenant.models import TenantMembership
+            membership = db.query(TenantMembership).filter(
+                TenantMembership.usuario_id == user.id, 
+                TenantMembership.rol_en_tenant == "owner"
+            ).first()
+            if membership:
+                user.tenant_id = membership.tenant_id
+
         db.commit()
 
         token, _jti, expire = create_access_token(user_id=user.id, role=user.rol)

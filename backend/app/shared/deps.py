@@ -89,6 +89,28 @@ def require_roles(*roles: str):
     return _dep
 
 
+# ── Guard por rol operativo ─────────────────────────────────────────
+def require_operational_roles(*roles: str):
+    """Retorna una dependencia que valida que el usuario tenga alguno
+    de los roles indicados Y que no sea un SuperAdmin sin tenant_id, 
+    bloqueando su acceso a rutas operativas (talleres, asignaciones, etc)."""
+
+    def _dep(user=Depends(get_current_user)):
+        if user.rol not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permisos insuficientes",
+            )
+        if user.rol == "admin" and user.tenant_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El SuperAdmin no puede realizar acciones operativas.",
+            )
+        return user
+
+    return _dep
+
+
 # ── Guard por Tenant ────────────────────────────────────────────────
 def get_current_tenant_id(user=Depends(get_current_user)) -> int | None:
     """Extrae el tenant_id del usuario actual. Si es None, es un superadmin sin org."""

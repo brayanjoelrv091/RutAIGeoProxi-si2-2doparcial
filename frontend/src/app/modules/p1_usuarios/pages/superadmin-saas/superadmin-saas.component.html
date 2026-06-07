@@ -1,0 +1,70 @@
+<div class="tech-container">
+  <div class="tech-header">
+    <h2><span class="tech-icon">🌐</span> Gestión SaaS Global</h2>
+    <p class="subtitle">Panel exclusivo para SuperAdmin: controla todas las suscripciones de los Tenants.</p>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando Tenants...</p>
+    </div>
+  } @else if (error) {
+    <div class="error-state">
+      <p>{{ error }}</p>
+      <button class="btn-outline-cyan" (click)="fetchTenants()">REINTENTAR</button>
+    </div>
+  } @else {
+    <div class="tech-table-container">
+      <table class="tech-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Empresa / Tenant</th>
+            <th>Slug</th>
+            <th>Plan SaaS</th>
+            <th>Estado</th>
+            <th>Fecha Creación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tenant of tenants; track tenant.id) {
+            <tr>
+              <td class="tech-id">#{{ tenant.id }}</td>
+              <td><strong>{{ tenant.nombre }}</strong></td>
+              <td style="color: #888;">{{ tenant.slug }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-basico': tenant.plan === 'basico',
+                  'badge-profesional': tenant.plan === 'profesional',
+                  'badge-empresarial': tenant.plan === 'empresarial'
+                }">{{ tenant.plan | uppercase }}</span>
+              </td>
+              <td>
+                @if (tenant.esta_activo) {
+                  <span class="badge" style="background: #00ffaa; color: #000;">ACTIVO</span>
+                } @else {
+                  <span class="badge" style="background: #ff0055;">SUSPENDIDO</span>
+                }
+              </td>
+              <td>{{ tenant.creado_en | date:'dd/MM/yyyy' }}</td>
+              <td>
+                @if (tenant.esta_activo) {
+                  <button class="btn-outline-red" (click)="toggleStatus(tenant)">Suspender</button>
+                } @else {
+                  <button class="btn-outline-cyan" (click)="toggleStatus(tenant)">Reactivar</button>
+                }
+              </td>
+            </tr>
+          }
+          @if (tenants.length === 0) {
+            <tr>
+              <td colspan="7" style="text-align: center; color: #888; padding: 20px;">No hay empresas registradas aún.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

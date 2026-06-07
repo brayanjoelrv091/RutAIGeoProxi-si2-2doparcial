@@ -21,6 +21,9 @@
       @if (userRole === 'admin') {
         <a routerLink="/admin-users" routerLinkActive="active" (click)="menuOpen=false">👥 Admin</a>
         <a routerLink="/reports" routerLinkActive="active" (click)="menuOpen=false">📊 Reportes</a>
+        @if (isSuperadmin) {
+          <a routerLink="/superadmin/saas" routerLinkActive="active" (click)="menuOpen=false" style="color: #00ffff; font-weight: bold;">🌐 Gestión SaaS</a>
+        }
       }
 
       <div class="notifications-wrapper">
