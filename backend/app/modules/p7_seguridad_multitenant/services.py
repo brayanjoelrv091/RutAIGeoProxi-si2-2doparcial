@@ -128,10 +128,37 @@ class TenantService:
         if nuevo_plan not in precios:
             raise HTTPException(status_code=400, detail="Plan no válido")
 
+        # Marcar la fecha_fin de la suscripción anterior
+        from app.modules.p7_seguridad_multitenant.models import TenantSubscriptionHistory
+        from datetime import datetime, timezone
+
+        historial_anterior = db.query(TenantSubscriptionHistory).filter(
+            TenantSubscriptionHistory.tenant_id == tenant_id,
+            TenantSubscriptionHistory.fecha_fin.is_(None)
+        ).first()
+
+        if historial_anterior:
+            historial_anterior.fecha_fin = datetime.now(timezone.utc)
+            db.commit()
+
         tenant.plan = nuevo_plan
+        tenant.estado_pago = "pagado" if nuevo_plan != "gratis" else "gratis"
+        tenant.metodo_pago = metodo_pago
+        tenant.monto_pago = int(monto)
         tenant.checkout_url = None
         db.commit()
         db.refresh(tenant)
+
+        # Crear nueva suscripción en el historial
+        nuevo_historial = TenantSubscriptionHistory(
+            tenant_id=tenant_id,
+            plan=nuevo_plan,
+            estado_pago=tenant.estado_pago,
+            metodo_pago=metodo_pago,
+            monto_pago=int(monto)
+        )
+        db.add(nuevo_historial)
+        db.commit()
 
         # Crear Notificación
         mensaje_pago = "Tarjeta de crédito (Stripe)" if metodo_pago == "tarjeta" else "Transferencia QR"

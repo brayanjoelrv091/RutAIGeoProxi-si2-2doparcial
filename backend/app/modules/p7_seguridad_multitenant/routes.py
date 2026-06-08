@@ -74,9 +74,12 @@ def upgrade_my_tenant(
     return TenantService.upgrade_tenant(db, current_user.tenant_id, schema.nuevo_plan, schema.metodo_pago)
 
 
+from fastapi import BackgroundTasks
+
 @router.post("/me/upgrade/confirm", response_model=TenantOut, summary="Confirmar mejora de plan de SaaS y enviar notificación")
 def confirm_my_tenant_upgrade(
     schema: TenantUpgradeConfirmRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(admin_dep),
 ):
@@ -84,7 +87,7 @@ def confirm_my_tenant_upgrade(
     if not current_user.tenant_id:
         raise HTTPException(status_code=400, detail="El usuario no tiene una red de talleres asignada.")
         
-    return TenantService.confirm_upgrade_tenant(
+    tenant = TenantService.confirm_upgrade_tenant(
         db, 
         current_user.tenant_id, 
         current_user.id,
@@ -92,6 +95,11 @@ def confirm_my_tenant_upgrade(
         schema.metodo_pago,
         schema.monto
     )
+    
+    from app.modules.p1_usuarios.services import notify_superadmins_bg
+    background_tasks.add_task(notify_superadmins_bg, tenant.nombre, schema.nuevo_plan, schema.monto, schema.metodo_pago, True)
+    
+    return tenant
 
 @router.post("/{tenant_id}/members", response_model=MembershipOut, summary="Agregar miembro al Tenant")
 def add_member(

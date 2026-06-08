@@ -46,7 +46,7 @@ from app.modules.p1_usuarios.schemas import (
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def notify_superadmins_bg(tenant_name: str, plan: str, monto: float, metodo: str):
+async def notify_superadmins_bg(tenant_name: str, plan: str, monto: float, metodo: str, is_upgrade: bool = False):
     from app.shared.database import SessionLocal
     from app.modules.p1_usuarios.models import Usuario
     from app.shared.websocket_manager import manager
@@ -56,18 +56,25 @@ async def notify_superadmins_bg(tenant_name: str, plan: str, monto: float, metod
     try:
         superadmins = db.query(Usuario).filter(Usuario.rol == "admin", Usuario.tenant_id.is_(None)).all()
         fecha_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        message = f"Un nuevo cliente se ha registrado con el nombre de la web: {tenant_name}. Se suscribió al plan {plan.upper()} de ${monto} con fecha {fecha_str}. Validó su pago con {metodo}."
+        
+        if is_upgrade:
+            titulo = "Suscripción Actualizada SaaS"
+            message = f"La empresa {tenant_name} ha cambiado su plan a {plan.upper()} por ${monto} con fecha {fecha_str}. Pagado con {metodo}."
+        else:
+            titulo = "Nuevo Registro SaaS"
+            message = f"Un nuevo cliente se ha registrado con el nombre de la web: {tenant_name}. Se suscribió al plan {plan.upper()} de ${monto} con fecha {fecha_str}. Validó su pago con {metodo}."
+
         payload = {
             "type": "notification",
-            "titulo": "Nuevo Registro SaaS",
+            "titulo": titulo,
             "mensaje": message,
         }
         for admin in superadmins:
             await manager.send_personal_message(payload, str(admin.id))
-            db.add(Notificacion(usuario_id=admin.id, titulo="Nuevo Registro SaaS", mensaje=message, tipo="push"))
+            db.add(Notificacion(usuario_id=admin.id, titulo=titulo, mensaje=message, tipo="info"))
             if admin.fcm_token:
                 from app.shared.firebase_config import send_push_notification
-                send_push_notification(admin.fcm_token, "Nuevo Registro SaaS", message, data={"type": "notification"})
+                send_push_notification(admin.fcm_token, titulo, message, data={"type": "notification"})
         db.commit()
     finally:
         db.close()
@@ -140,6 +147,17 @@ class AuthService:
             db.commit()
             db.refresh(tenant)
 
+            from app.modules.p7_seguridad_multitenant.models import TenantSubscriptionHistory
+            nuevo_historial = TenantSubscriptionHistory(
+                tenant_id=tenant.id,
+                plan=payload.plan,
+                estado_pago=estado_pago,
+                metodo_pago=metodo_pago,
+                monto_pago=monto_pago
+            )
+            db.add(nuevo_historial)
+            db.commit()
+
             membership = TenantMembership(
                 usuario_id=user.id,
                 tenant_id=tenant.id,
@@ -203,6 +221,12 @@ class AuthService:
 
         if tenant.estado_pago != "pagado":
             tenant.estado_pago = "pagado"
+            
+            from app.modules.p7_seguridad_multitenant.models import TenantSubscriptionHistory
+            historial = db.query(TenantSubscriptionHistory).filter(TenantSubscriptionHistory.tenant_id == tenant.id).order_by(TenantSubscriptionHistory.id.desc()).first()
+            if historial:
+                historial.estado_pago = "pagado"
+
             db.commit()
             if background_tasks:
                 background_tasks.add_task(notify_superadmins_bg, tenant.nombre, tenant.plan, tenant.monto_pago, tenant.metodo_pago)

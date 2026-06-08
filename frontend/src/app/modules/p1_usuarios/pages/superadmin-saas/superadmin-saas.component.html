@@ -77,8 +77,58 @@
                 } @else {
                   <button class="btn-outline-cyan" (click)="toggleStatus(tenant)">Reactivar</button>
                 }
+                <button class="btn-outline-cyan" style="margin-top: 5px; font-size: 0.8rem;" (click)="toggleHistory(tenant)">
+                  <i class="fas fa-history"></i> {{ tenant.expanded ? 'Ocultar' : 'Historial' }}
+                </button>
               </td>
             </tr>
+            @if (tenant.expanded) {
+              <tr class="history-row">
+                <td colspan="8" style="background-color: #111; padding: 15px;">
+                  <h4 style="color: #00f2ff; margin-bottom: 10px;">Historial de Pagos y Suscripciones</h4>
+                  @if (tenant.historial_suscripciones && tenant.historial_suscripciones.length > 0) {
+                    <table class="tech-table" style="font-size: 0.85rem; width: 100%;">
+                      <thead>
+                        <tr>
+                          <th>Plan</th>
+                          <th>Monto</th>
+                          <th>Método</th>
+                          <th>Estado</th>
+                          <th>Inicio</th>
+                          <th>Fin</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (hist of tenant.historial_suscripciones; track hist.id) {
+                          <tr>
+                            <td>{{ hist.plan | uppercase }}</td>
+                            <td>${{ hist.monto_pago }}</td>
+                            <td>{{ hist.metodo_pago | uppercase }}</td>
+                            <td>
+                              @if (hist.estado_pago === 'pagado') {
+                                <span style="color: #00ffaa;">PAGADO</span>
+                              } @else {
+                                <span style="color: #aaa;">{{ hist.estado_pago | uppercase }}</span>
+                              }
+                            </td>
+                            <td>{{ hist.fecha_inicio | date:'dd/MM/yyyy HH:mm' }}</td>
+                            <td>
+                              @if (hist.fecha_fin) {
+                                <span style="color: #ff0055;">{{ hist.fecha_fin | date:'dd/MM/yyyy HH:mm' }} (Inactivo)</span>
+                              } @else {
+                                <span style="color: #00ffaa;">Actual</span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  } @else {
+                    <p style="color: #888; font-size: 0.9rem;">No hay historial registrado para esta empresa.</p>
+                  }
+                </td>
+              </tr>
+            }
           }
           @if (tenants.length === 0) {
             <tr>

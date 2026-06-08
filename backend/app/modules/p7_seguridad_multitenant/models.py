@@ -65,3 +65,30 @@ class TenantMembership(Base):
     tenant = relationship("Tenant", back_populates="miembros")
     # 'usuario' no se define aquí como back_populates para evitar circular dependency, 
     # se usará ref simple o query directa.
+
+
+class TenantSubscriptionHistory(Base):
+    """Historial de Suscripciones SaaS de un Tenant."""
+
+    __tablename__ = "tenant_subscription_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    plan = Column(String(50), nullable=False)
+    estado_pago = Column(String(50), nullable=False)
+    metodo_pago = Column(String(50), nullable=False)
+    monto_pago = Column(Integer, nullable=False)
+    fecha_inicio = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    fecha_fin = Column(DateTime(timezone=True), nullable=True)
+
+    # ── Relaciones ──
+    tenant = relationship("Tenant", backref="historial_suscripciones")

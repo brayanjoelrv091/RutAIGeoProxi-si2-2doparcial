@@ -20,6 +20,17 @@ class TenantUpdate(BaseModel):
     esta_activo: bool | None = None
     plan: str | None = None
 
+class TenantSubscriptionHistoryOut(BaseModel):
+    id: int
+    plan: str
+    estado_pago: str
+    metodo_pago: str
+    monto_pago: int
+    fecha_inicio: datetime
+    fecha_fin: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
 class TenantOut(TenantBase):
     id: int
     creado_en: datetime
@@ -28,6 +39,7 @@ class TenantOut(TenantBase):
     metodo_pago: str | None = None
     monto_pago: float | None = None
     checkout_url: str | None = None
+    historial_suscripciones: list[TenantSubscriptionHistoryOut] = []
 
     model_config = {"from_attributes": True}
 

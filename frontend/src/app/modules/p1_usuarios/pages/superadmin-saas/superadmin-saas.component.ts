@@ -17,6 +17,8 @@ interface Tenant {
   metodo_pago: string;
   monto_pago: number;
   admin_nombre: string;
+  historial_suscripciones?: any[];
+  expanded?: boolean;
 }
 
 @Component({
@@ -61,6 +63,10 @@ export class SuperadminSaasComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+  }
+
+  toggleHistory(tenant: Tenant) {
+    tenant.expanded = !tenant.expanded;
   }
 
   async toggleStatus(tenant: Tenant) {

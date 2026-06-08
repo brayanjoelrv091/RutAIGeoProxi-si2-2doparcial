@@ -13,6 +13,8 @@ router = APIRouter(tags=["P7 · Gestión SaaS (SuperAdmin)"])
 class TenantStatusUpdate(BaseModel):
     esta_activo: bool
 
+from app.modules.p7_seguridad_multitenant.schemas import TenantSubscriptionHistoryOut
+
 class TenantOut(BaseModel):
     id: int
     nombre: str
@@ -25,6 +27,7 @@ class TenantOut(BaseModel):
     metodo_pago: str = "ninguno"
     monto_pago: int = 0
     admin_nombre: str | None = None
+    historial_suscripciones: List[TenantSubscriptionHistoryOut] = []
     
     class Config:
         from_attributes = True
@@ -88,7 +91,8 @@ def list_all_tenants(
 ):
     """Obtiene la lista de todas las suscripciones (empresas) registradas en el sistema."""
     from app.modules.p7_seguridad_multitenant.models import TenantMembership
-    tenants = db.query(Tenant).order_by(Tenant.creado_en.desc()).all()
+    from sqlalchemy.orm import joinedload
+    tenants = db.query(Tenant).options(joinedload(Tenant.historial_suscripciones)).order_by(Tenant.creado_en.desc()).all()
     for t in tenants:
         membership = db.query(TenantMembership).filter(TenantMembership.tenant_id == t.id, TenantMembership.rol_en_tenant == "owner").first()
         if membership:
