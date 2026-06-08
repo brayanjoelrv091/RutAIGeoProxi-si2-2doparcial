@@ -27,7 +27,9 @@ export class TenantFormComponent implements OnInit {
     this.tenantForm = this.fb.group({
       nombre: ['', Validators.required],
       dominio: [''],
-      estado: ['activo']
+      estado: ['activo'],
+      email_admin: [''],
+      plan: ['basico']
     });
   }
 

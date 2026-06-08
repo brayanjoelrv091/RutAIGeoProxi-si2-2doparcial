@@ -8,15 +8,55 @@ from sqlalchemy.exc import IntegrityError
 
 from app.modules.p7_seguridad_multitenant.models import Tenant, TenantMembership
 from app.modules.p7_seguridad_multitenant.schemas import TenantCreate, TenantUpdate, MembershipCreate
+import secrets
+import string
+from app.shared.security import get_password_hash
+from app.modules.p1_usuarios.models import Usuario
+from app.shared.email import send_tenant_welcome_email
 
 class TenantService:
     @staticmethod
     def create_tenant(db: Session, schema: TenantCreate) -> Tenant:
-        db_tenant = Tenant(**schema.model_dump())
+        # Extraemos email_admin si existe y lo removemos del dict para Tenant
+        schema_dict = schema.model_dump()
+        email_admin = schema_dict.pop("email_admin", None)
+        
+        db_tenant = Tenant(**schema_dict)
         try:
             db.add(db_tenant)
             db.commit()
             db.refresh(db_tenant)
+            
+            # CU-29: Si se envió un correo, crear el usuario administrador automáticamente
+            if email_admin:
+                # Generar contraseña segura: 8 caracteres (letras, dígitos y un carácter especial)
+                alphabet = string.ascii_letters + string.digits
+                temp_password = ''.join(secrets.choice(alphabet) for i in range(8)) + "!"
+                
+                new_admin = Usuario(
+                    nombre=f"Admin {db_tenant.nombre}",
+                    email=email_admin,
+                    hashed_password=get_password_hash(temp_password),
+                    rol="admin",
+                    esta_activo=True,
+                    tenant_id=db_tenant.id
+                )
+                db.add(new_admin)
+                db.commit()
+                db.refresh(new_admin)
+                
+                # Asignar membresía
+                membership = TenantMembership(
+                    tenant_id=db_tenant.id,
+                    usuario_id=new_admin.id,
+                    rol_en_tenant="admin"
+                )
+                db.add(membership)
+                db.commit()
+                
+                # Enviar correo de credenciales
+                send_tenant_welcome_email(email_admin, db_tenant.nombre, temp_password)
+                
             return db_tenant
         except IntegrityError:
             db.rollback()

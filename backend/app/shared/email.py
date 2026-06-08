@@ -93,3 +93,94 @@ def send_reset_email(to_email: str, token: str):
             server.send_message(msg)
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
+
+def send_tenant_welcome_email(to_email: str, tenant_name: str, temp_password: str):
+    """
+    Envía el correo de bienvenida al nuevo administrador del tenant (CU-29).
+    """
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        print("SMTP no configurado. No se enviará correo.")
+        return
+
+    login_url = "http://localhost:4200/login"
+
+    msg = EmailMessage()
+    msg['Subject'] = f"¡Bienvenido a RutAIGeoProxi! Accesos para {tenant_name}"
+    msg['From'] = settings.FROM_EMAIL
+    msg['To'] = to_email
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+      <body style="margin: 0; padding: 0; background-color: #121212; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #E0E0E0;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #121212; padding: 40px 0;">
+          <tr>
+            <td align="center">
+              <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #1E1E1E; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <!-- Header -->
+                <tr>
+                  <td style="background-color: #2A2A2A; padding: 20px; text-align: center; border-bottom: 2px solid #00F2FF;">
+                    <h1 style="color: #00F2FF; margin: 0; font-size: 24px; letter-spacing: 2px;">RUT<span style="color: #FFF;">AI</span>GEOPROXI</h1>
+                  </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <h2 style="color: #FFFFFF; font-size: 20px; margin-top: 0;">¡Hola!</h2>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                      Tu organización <strong>{tenant_name}</strong> ha sido creada exitosamente en nuestra plataforma SaaS.
+                    </p>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-bottom: 30px;">
+                      A continuación, te proporcionamos tus credenciales de acceso temporal como Administrador:
+                    </p>
+                    
+                    <div style="background-color: #2A2A2A; padding: 15px; border-radius: 4px; border-left: 4px solid #00F2FF; margin-bottom: 30px;">
+                      <p style="margin: 0; font-family: monospace; font-size: 16px;">
+                        <strong>Usuario:</strong> {to_email}<br>
+                        <strong>Contraseña Temporal:</strong> {temp_password}
+                      </p>
+                    </div>
+
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center">
+                          <a href="{login_url}" style="display: inline-block; background-color: #00F2FF; color: #000000; font-weight: bold; font-size: 16px; text-decoration: none; padding: 14px 30px; border-radius: 4px;">
+                            Iniciar Sesión
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-top: 30px;">
+                      Te recomendamos cambiar esta contraseña temporal una vez ingreses a la plataforma, en la sección de tu perfil.
+                    </p>
+                    <p style="color: #B0B0B0; font-size: 16px; line-height: 1.5; margin-top: 30px;">
+                      Saludos,<br>
+                      <strong style="color: #FFFFFF;">El equipo de RutAIGeoProxi</strong>
+                    </p>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #1A1A1A; padding: 20px; text-align: center;">
+                    <p style="color: #777777; font-size: 12px; margin: 0;">
+                      © 2026 RutAIGeoProxi. Todos los derechos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+    """
+    msg.set_content(html_content, subtype='html')
+
+    try:
+        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.send_message(msg)
+    except Exception as e:
+        print(f"Error al enviar el correo de bienvenida: {e}")

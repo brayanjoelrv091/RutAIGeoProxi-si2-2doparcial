@@ -12,7 +12,7 @@ class TenantBase(BaseModel):
     plan: str = "basico"
 
 class TenantCreate(TenantBase):
-    pass
+    email_admin: str | None = Field(default=None, description="Email del primer administrador del tenant")
 
 class TenantUpdate(BaseModel):
     nombre: str | None = Field(default=None, min_length=2, max_length=200)
