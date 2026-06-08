@@ -12,6 +12,8 @@ import '../modules/offline/sync_manager.dart';
 import '../session.dart';
 import '../modules/workshops/models/workshop_model.dart';
 import '../modules/workshops/services/workshop_service.dart';
+import '../modules/offline/connectivity_monitor.dart';
+import 'dart:async';
 
 class ReportIncidentScreen extends StatefulWidget {
   const ReportIncidentScreen({super.key});
@@ -41,11 +43,24 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
   int? _tallerPreferidoId;
   List<Workshop> _favoritos = [];
 
+  // Offline Monitoring
+  final ConnectivityMonitor _connectivity = ConnectivityMonitor();
+  StreamSubscription? _connectivitySub;
+  bool _isOnline = true;
+
   @override
   void initState() {
     super.initState();
     _audioRecorder = AudioRecorder();
     _loadFavorites();
+    
+    // Iniciar monitoreo offline proactivo
+    _connectivity.startMonitoring(interval: const Duration(seconds: 3));
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((isOnline) {
+      if (mounted) {
+        setState(() => _isOnline = isOnline);
+      }
+    });
   }
 
   Future<void> _loadFavorites() async {
@@ -57,6 +72,8 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
 
   @override
   void dispose() {
+    _connectivitySub?.cancel();
+    _connectivity.dispose();
     _audioRecorder.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
@@ -238,6 +255,11 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
       _error = null;
     });
 
+    if (!_isOnline) {
+      await _saveToOfflineQueue();
+      return;
+    }
+
     try {
       final res = await Backend.reportIncident(
         title: _titleController.text,
@@ -317,12 +339,33 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
         title: const Text('Reportar Emergencia'),
         backgroundColor: const Color(0xFF111629),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
+      body: Column(
+        children: [
+          if (!_isOnline)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              color: Colors.deepOrangeAccent,
+              child: const Row(
+                children: [
+                  Icon(Icons.wifi_off, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Modo Offline Activo. Su reporte será guardado localmente y enviado al reconectar.',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
               const Text(
                 'Describa su emergencia vehicular',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
@@ -554,6 +597,9 @@ class _ReportIncidentScreenState extends State<ReportIncidentScreen> {
             ],
           ),
         ),
+      ),
+    ),
+        ],
       ),
     );
   }
